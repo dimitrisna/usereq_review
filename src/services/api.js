@@ -1,7 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://localhost:4000';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -73,30 +73,159 @@ export const getMockup = (id) => api.get(`/api/mockups/${id}`);
 export const updateMockup = (id, data) => api.put(`/api/mockups/${id}`, data);
 
 // Reviews endpoints
-export const submitReview = (artifactType, artifactId, rating, comment) => 
-    api.post('/api/reviews', { 
-      artifactType, // 'story', 'requirement', etc.
-      artifactId,   // The _id of the artifact
-      rating,       // Numeric rating
-      comment       // Comment text
+export const submitReview = (artifactType, artifactId, rating, comment, scores = {}) => {
+  console.log(`[API] Submitting review for ${artifactType} ${artifactId}:`, {
+    artifactType, artifactId, rating, comment, scores
+  });
+  return api.post('/api/reviews', {
+    artifactType,
+    artifactId,
+    rating,
+    comment,
+    ...scores
+  })
+    .then(response => {
+      console.log('[API] Submit review response:', response.data);
+      return response;
+    })
+    .catch(error => {
+      console.error('[API] Error submitting review:', error);
+      throw error;
     });
-export const getReviewsForArtifact = (artifactType, artifactId) => 
+};
+
+// Get all reviews for an artifact (from all users)
+export const getReviewsForArtifact = (artifactType, artifactId) =>
   api.get(`/api/reviews/${artifactType}/${artifactId}`);
-export const getMyReview = (artifactType, artifactId) => 
+
+// Get current user's review for an artifact
+export const getMyReview = (artifactType, artifactId) =>
   api.get(`/api/reviews/my/${artifactType}/${artifactId}`);
 
+// Get all reviews for an artifact type in a project (from all users)
+export const getAllReviewsForArtifactType = (projectId, artifactType) =>
+  api.get(`/api/reviews/project/${projectId}/artifactType/${artifactType}`);
+
 // General Comments endpoints
-export const saveGeneralComment = (projectId, artifactType, comment) => 
+export const saveGeneralComment = (projectId, artifactType, comment) =>
   api.post('/api/reviews/general-comment', { projectId, artifactType, comment });
-export const getGeneralComment = (projectId, artifactType) => 
+export const getGeneralComment = (projectId, artifactType) =>
   api.get(`/api/reviews/general-comment/${projectId}/${artifactType}`);
 
 // Rubric Evaluations endpoints
-export const getRubricEvaluation = (projectId, rubricType) => 
+export const getRubricEvaluation = (projectId, rubricType) =>
   api.get(`/api/rubric-evaluations/${projectId}/${rubricType}`);
-export const saveRubricEvaluation = (data) => 
+export const saveRubricEvaluation = (data) =>
   api.post('/api/rubric-evaluations', data);
-export const saveRubricGeneralComment = (projectId, rubricType, comment) => 
+export const saveRubricGeneralComment = (projectId, rubricType, comment) =>
   api.post('/api/rubric-evaluations/general-comment', { projectId, rubricType, comment });
+
+// Composite endpoints for dashboard and review data
+export const getProjectDashboard = (projectId) =>
+  api.get(`/api/composite/projects/${projectId}/dashboard`);
+
+// Design Patterns review data
+export const getDesignPatternsReviewData = (projectId) => {
+  return api.get(`/api/composite/design-patterns/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Activity Diagrams review data
+export const getActivityDiagramsReviewData = (projectId) => {
+  return api.get(`/api/composite/activity-diagrams/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Class Diagrams review data
+export const getClassDiagramsReviewData = (projectId) => {
+  return api.get(`/api/composite/class-diagrams/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Sequence Diagrams review data
+export const getSequenceDiagramsReviewData = (projectId) => {
+  return api.get(`/api/composite/sequence-diagrams/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Use Case Diagrams review data
+export const getUseCaseDiagramsReviewData = (projectId) => {
+  return api.get(`/api/composite/use-case-diagrams/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Mockups review data
+export const getMockupsReviewData = (projectId) => {
+  return api.get(`/api/composite/mockups/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Requirements review data
+export const getRequirementsReviewData = (projectId) => {
+  return api.get(`/api/composite/requirements/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Stories review data
+export const getStoriesReviewData = (projectId) => {
+  return api.get(`/api/composite/stories/project/${projectId}/review-data`)
+    .then(response => {
+      return response;
+    })
+    .catch(error => {
+      throw error;
+    });
+};
+
+// Get mockup navigation tree
+export const getMockupNavigationTree = (mockupId) =>
+  api.get(`/api/composite/mockups/${mockupId}/navigation-tree`);
+
+// Submit bulk reviews
+export const submitBulkReviews = (reviews) =>
+  api.post('/api/composite/reviews/bulk', { reviews });
+
+// Get linked artifact
+export const getLinkedArtifact = (artifactType, artifactId) =>
+  api.get(`/api/composite/linked-artifact/${artifactType}/${artifactId}`);
+
+// Get aggregate reviews across all users (universal review)
+export const getAggregateReviews = (projectId, artifactType) =>
+  api.get(`/api/composite/aggregate-reviews/${projectId}/${artifactType}`);
 
 export default api;
