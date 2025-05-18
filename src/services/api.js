@@ -31,6 +31,16 @@ export const logout = () => api.post('/api/auth/logout');
 // Projects endpoints
 export const getProjects = () => api.get('/api/projects');
 export const getProject = (id) => api.get(`/api/projects/${id}`);
+export const getProjectsStats = (page = 1, limit = 10, queryParams = '') => {
+  let url = `/api/projects/stats?page=${page}&limit=${limit}`;
+  if (queryParams && queryParams !== '') {
+    url += `&${queryParams}`;
+  }
+  return api.get(url);
+};
+
+export const getProjectStats = (projectId) => 
+  api.get(`/api/projects/${projectId}/stats`);
 
 // Requirements endpoints
 export const getRequirements = (projectId) => api.get(`/api/requirements/project/${projectId}`);
