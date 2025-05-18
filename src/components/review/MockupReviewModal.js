@@ -70,7 +70,8 @@ const MockupReviewModal = ({
   hasUnsavedChanges,
   onDirtyStateChange,
   onReviewChange,
-  onPreviewLinkedItem
+  onPreviewLinkedItem,
+  isAdmin = false
 }) => {
   const [comment, setComment] = useState('');
   const [criteriaScores, setCriteriaScores] = useState({});
@@ -80,6 +81,9 @@ const MockupReviewModal = ({
   // State for screen previews
   const [previewScreen, setPreviewScreen] = useState(null);
   const [isNextScreen, setIsNextScreen] = useState(false);
+  
+  // Determine if the current artifact is editable by this user
+  const isEditable = isAdmin === true;
 
   // Initialize review data when modal opens
   useEffect(() => {
@@ -102,7 +106,7 @@ const MockupReviewModal = ({
 
   // Track dirty state
   useEffect(() => {
-    if (!isOpen || !artifact || !initialReview) return;
+    if (!isOpen || !artifact || !initialReview || !isEditable) return;
 
     // Only check for dirty state when modal is open and we have data
     const hasCommentChanged = comment !== (initialReview.comment || '');
@@ -123,9 +127,11 @@ const MockupReviewModal = ({
       onDirtyStateChange(isDirty);
     }
 
-  }, [isOpen, artifact, comment, criteriaScores, initialReview, criteriaDefinitions, onDirtyStateChange]);
+  }, [isOpen, artifact, comment, criteriaScores, initialReview, criteriaDefinitions, onDirtyStateChange, isEditable]);
 
   const handleCriteriaChange = (key, value) => {
+    if (!isEditable) return;
+    
     console.log(`[MockupReviewModal] Criteria ${key} changed to ${value}`);
 
     // Create a new scores object with the updated value
@@ -141,6 +147,8 @@ const MockupReviewModal = ({
   };
 
   const handleCommentChange = (e) => {
+    if (!isEditable) return;
+    
     const newComment = e.target.value;
     setComment(newComment);
 
@@ -157,6 +165,8 @@ const MockupReviewModal = ({
   };
 
   const handleSave = () => {
+    if (!isEditable) return;
+    
     // Make sure we're structuring the data correctly
     const reviewData = {
       comment,
@@ -311,6 +321,7 @@ const MockupReviewModal = ({
                 value={calculateOverallScore()}
                 size="lg"
                 allowHalf={true}
+                readOnly={true}
               />
               <span className="ml-3 text-gray-600">{calculateOverallScore().toFixed(1)}</span>
             </div>
@@ -326,8 +337,9 @@ const MockupReviewModal = ({
                     <span className="font-medium">{criteria.name}</span>
                     <StarRating
                       value={criteriaScores[criteria.key] || 0}
-                      onChange={value => handleCriteriaChange(criteria.key, value)}
+                      onChange={isEditable ? value => handleCriteriaChange(criteria.key, value) : undefined}
                       allowHalf={true}
+                      readOnly={!isEditable}
                     />
                   </div>
                   <p className="text-xs text-gray-500">{criteria.description}</p>
@@ -337,14 +349,18 @@ const MockupReviewModal = ({
           </div>
 
           <div className="mb-6">
-            <h4 className="font-medium mb-2">Your Comments</h4>
+            <h4 className="font-medium mb-2">
+              {isEditable ? 'Your Comments' : 'Reviewer Comments'}
+            </h4>
             <textarea
-              className="w-full border border-gray-300 rounded p-2"
+              className={`w-full border border-gray-300 rounded p-2 ${!isEditable ? 'bg-gray-50' : ''}`}
               rows="6"
               style={{ height: '150px', resize: 'vertical' }}
               value={comment}
               onChange={handleCommentChange}
-              placeholder={`Add your comments about this mockup...`}
+              placeholder={`${isEditable ? 'Add' : 'View'} comments about this mockup...`}
+              readOnly={!isEditable}
+              disabled={!isAdmin}
             ></textarea>
           </div>
 
@@ -353,14 +369,16 @@ const MockupReviewModal = ({
               className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded mr-2"
               onClick={handleClose}
             >
-              Cancel
+              {isEditable ? 'Cancel' : 'Close'}
             </button>
-            <button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
-              onClick={handleSave}
-            >
-              Save Review
-            </button>
+            {isEditable && (
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                onClick={handleSave}
+              >
+                Save Review
+              </button>
+            )}
           </div>
         </div>
 

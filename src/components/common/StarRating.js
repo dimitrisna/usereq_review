@@ -2,14 +2,15 @@
 import React from 'react';
 
 /**
- * Enhanced StarRating component with half-star support
+ * Enhanced StarRating component with half-star support and read-only mode
  * @param {number} value - Current rating value
  * @param {number} max - Maximum rating value (default: 5)
  * @param {function} onChange - Callback when rating changes (omit to make read-only)
  * @param {string} size - Size of stars: "sm", "md", or "lg"
  * @param {boolean} allowHalf - Whether to allow half-star ratings
+ * @param {boolean} readOnly - Whether the rating is read-only (not clickable)
  */
-const StarRating = ({ value = 0, max = 5, onChange = null, size = "md", allowHalf = false }) => {
+const StarRating = ({ value = 0, max = 5, onChange = null, size = "md", allowHalf = false, readOnly = false }) => {
   const sizeClass = {
     sm: "text-lg",
     md: "text-2xl",
@@ -17,7 +18,7 @@ const StarRating = ({ value = 0, max = 5, onChange = null, size = "md", allowHal
   }[size] || "text-2xl";
 
   const handleStarClick = (index, e) => {
-    if (!onChange) return; // If no onChange handler, stars are not clickable
+    if (!onChange || readOnly) return; // Don't run if readOnly or no onChange handler
 
     const rect = e.currentTarget.getBoundingClientRect();
     const position = e.clientX - rect.left;
@@ -42,7 +43,7 @@ const StarRating = ({ value = 0, max = 5, onChange = null, size = "md", allowHal
         } else if (allowHalf && value >= starIndex - 0.5) {
           // Improved half-star rendering with cleaner styling
           return (
-            <div key={starIndex} className={`${sizeClass} relative ${onChange ? 'cursor-pointer' : ''}`} onClick={(e) => handleStarClick(starIndex, e)}>
+            <div key={starIndex} className={`${sizeClass} relative ${!readOnly && onChange ? 'cursor-pointer' : 'cursor-default'}`} onClick={(e) => handleStarClick(starIndex, e)}>
               <div className="absolute inset-0 overflow-hidden" style={{ width: '50%' }}>
                 <span className="text-yellow-500">★</span>
               </div>
@@ -54,7 +55,7 @@ const StarRating = ({ value = 0, max = 5, onChange = null, size = "md", allowHal
         return (
           <span
             key={starIndex}
-            className={`${sizeClass} ${onChange ? 'cursor-pointer' : ''} ${starClass}`}
+            className={`${sizeClass} ${!readOnly && onChange ? 'cursor-pointer' : 'cursor-default'} ${starClass}`}
             onClick={(e) => handleStarClick(starIndex, e)}
           >
             {value >= starIndex ? '★' : '☆'}

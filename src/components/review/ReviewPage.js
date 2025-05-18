@@ -1,3 +1,4 @@
+// Full implementation of ReviewPage.js with role-based permissions
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Header from '../common/Header';
@@ -6,6 +7,7 @@ import UnsavedChangesModal from '../common/UnsavedChangesModal';
 import ReviewCriteriaRubric from './ReviewCriteriaRubric';
 import ArtifactTable from './ArtifactTable';
 import ReviewModal from './ReviewModal';
+import MockupReviewModal from './MockupReviewModal';
 import LinkedItemPreviewModal from './LinkedItemPreviewModal';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -62,6 +64,9 @@ const ReviewPage = ({
     const [commentDirty, setCommentDirty] = useState(false);
 
     const { currentUser } = useAuth();
+    
+    // Determine if the current user is an admin
+    const isAdmin = currentUser?.role === 'Admin';
 
     // Function to refresh aggregate rubric data
     const refreshAggregateRubricData = async () => {
@@ -177,11 +182,11 @@ const ReviewPage = ({
 
     const handleCloseReviewModal = () => {
         console.log('[ReviewPage] Close modal requested, dirty state:', reviewDirty);
-        if (reviewDirty) {
+        if (reviewDirty && isAdmin) {
             console.log('[ReviewPage] Showing unsaved changes modal');
             setShowUnsavedChangesModal(true);
         } else {
-            console.log('[ReviewPage] No changes, closing modal directly');
+            console.log('[ReviewPage] No changes or not admin, closing modal directly');
             setShowModal(false);
             setSelectedArtifact(null);
             setCurrentReview({ comment: '', scores: {} });
@@ -233,6 +238,12 @@ const ReviewPage = ({
     }, [currentReview.scores]);
 
     const saveReview = async () => {
+        // Only allow admin users to save reviews
+        if (!isAdmin) {
+            console.log('[ReviewPage] Non-admin user attempted to save a review');
+            return;
+        }
+        
         try {
             console.log('[ReviewPage] Starting save review process');
             console.log('[ReviewPage] Current review state:', currentReview);
@@ -308,6 +319,12 @@ const ReviewPage = ({
     };
 
     const saveGeneralCommentHandler = async () => {
+        // Only allow admin users to save general comments
+        if (!isAdmin) {
+            console.log('[ReviewPage] Non-admin user attempted to save a general comment');
+            return;
+        }
+        
         try {
             await saveGeneralCommentFn(projectId, artifactType, generalComment);
             setOriginalGeneralComment(generalComment);
@@ -376,6 +393,7 @@ const ReviewPage = ({
                         artifacts={artifacts}
                         onReview={openReviewModal}
                         artifactName={artifactType.slice(0, -1)} // singular form
+                        isAdmin={isAdmin}
                     />
                 </div>
 
@@ -393,14 +411,16 @@ const ReviewPage = ({
                         <div className="p-6">
                             <h2 className="text-xl font-bold mb-4">General Comments</h2>
                             <textarea
-                                className="w-full border border-gray-300 rounded p-2"
-                                placeholder={`Add general comments about all ${artifactType}...`}
+                                className={`w-full border border-gray-300 rounded p-2 ${!isAdmin ? 'bg-gray-50' : ''}`}
+                                placeholder={`${isAdmin ? 'Add' : 'View'} general comments about all ${artifactType}...`}
                                 rows="12"
                                 style={{ height: '250px', resize: 'vertical' }}
                                 value={generalComment}
                                 onChange={(e) => setGeneralComment(e.target.value)}
+                                readOnly={!isAdmin}
+                                disabled={!isAdmin}
                             ></textarea>
-                            {commentDirty && (
+                            {commentDirty && isAdmin && (
                                 <div className="mt-4 flex justify-end">
                                     <button
                                         className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
@@ -415,18 +435,35 @@ const ReviewPage = ({
                 </div>
 
                 {/* Review Modal */}
-                <ReviewModal
-                    artifact={selectedArtifact}
-                    isOpen={showModal}
-                    onClose={handleCloseReviewModal}
-                    onSave={saveReview}
-                    initialReview={originalReviewRef.current}
-                    criteriaDefinitions={criteriaDefinitions}
-                    hasUnsavedChanges={reviewDirty}
-                    onDirtyStateChange={handleReviewDirtyChange}
-                    onReviewChange={handleReviewChange}
-                    onPreviewLinkedItem={handlePreviewLinkedItem}
-                />
+                {artifactType === 'mockups' ? (
+                    <MockupReviewModal
+                        artifact={selectedArtifact}
+                        isOpen={showModal}
+                        onClose={handleCloseReviewModal}
+                        onSave={saveReview}
+                        initialReview={originalReviewRef.current}
+                        criteriaDefinitions={criteriaDefinitions}
+                        hasUnsavedChanges={reviewDirty}
+                        onDirtyStateChange={handleReviewDirtyChange}
+                        onReviewChange={handleReviewChange}
+                        onPreviewLinkedItem={handlePreviewLinkedItem}
+                        isAdmin={isAdmin}
+                    />
+                ) : (
+                    <ReviewModal
+                        artifact={selectedArtifact}
+                        isOpen={showModal}
+                        onClose={handleCloseReviewModal}
+                        onSave={saveReview}
+                        initialReview={originalReviewRef.current}
+                        criteriaDefinitions={criteriaDefinitions}
+                        hasUnsavedChanges={reviewDirty}
+                        onDirtyStateChange={handleReviewDirtyChange}
+                        onReviewChange={handleReviewChange}
+                        onPreviewLinkedItem={handlePreviewLinkedItem}
+                        isAdmin={isAdmin}
+                    />
+                )}
 
                 {/* Linked Item Preview Modal */}
                 <LinkedItemPreviewModal

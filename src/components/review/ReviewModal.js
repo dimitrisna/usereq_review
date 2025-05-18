@@ -15,6 +15,7 @@ import DiagramViewer from '../common/DiagramViewer';
  * @param {function} onDirtyStateChange - Callback for dirty state changes
  * @param {function} onReviewChange - Callback for review data changes
  * @param {function} onPreviewLinkedItem - Callback to preview a linked item
+ * @param {boolean} isAdmin - Whether the current user has admin privileges
  */
 const ReviewModal = ({
     artifact,
@@ -26,10 +27,14 @@ const ReviewModal = ({
     hasUnsavedChanges,
     onDirtyStateChange,
     onReviewChange,
-    onPreviewLinkedItem
+    onPreviewLinkedItem,
+    isAdmin = false
 }) => {
     const [comment, setComment] = useState('');
     const [criteriaScores, setCriteriaScores] = useState({});
+    
+    // Determine if the current artifact is editable by this user
+    const isEditable = isAdmin === true;
 
     // Initialize review data when modal opens
     useEffect(() => {
@@ -52,7 +57,7 @@ const ReviewModal = ({
 
     // Track dirty state
     useEffect(() => {
-        if (!isOpen || !artifact || !initialReview) return;
+        if (!isOpen || !artifact || !initialReview || !isEditable) return;
 
         // Only check for dirty state when modal is open and we have data
         const hasCommentChanged = comment !== (initialReview.comment || '');
@@ -67,25 +72,17 @@ const ReviewModal = ({
             }
         });
 
-        // Log to help debug
-        console.log('[ReviewModal] Dirty check:', {
-            hasCommentChanged,
-            hasScoresChanged,
-            originalComment: initialReview.comment,
-            currentComment: comment,
-            originalScores: initialReview.scores,
-            currentScores: criteriaScores
-        });
-
         // Set the dirty flag based on changes
         const isDirty = hasCommentChanged || hasScoresChanged;
         if (onDirtyStateChange) {
             onDirtyStateChange(isDirty);
         }
 
-    }, [isOpen, artifact, comment, criteriaScores, initialReview, criteriaDefinitions, onDirtyStateChange]);
+    }, [isOpen, artifact, comment, criteriaScores, initialReview, criteriaDefinitions, onDirtyStateChange, isEditable]);
 
     const handleCriteriaChange = (key, value) => {
+        if (!isEditable) return;
+
         console.log(`[ReviewModal] Criteria ${key} changed to ${value}`);
 
         // Create a new scores object with the updated value
@@ -101,6 +98,8 @@ const ReviewModal = ({
     };
 
     const handleCommentChange = (e) => {
+        if (!isEditable) return;
+
         const newComment = e.target.value;
         setComment(newComment);
 
@@ -117,6 +116,8 @@ const ReviewModal = ({
     };
 
     const handleSave = () => {
+        if (!isEditable) return;
+
         // Make sure we're structuring the data exactly as ReviewPage expects it
         const reviewData = {
             comment,
@@ -254,6 +255,7 @@ const ReviewModal = ({
                                 value={calculateOverallScore()}
                                 size="lg"
                                 allowHalf={true}
+                                readOnly={true}
                             />
                             <span className="ml-3 text-gray-600">{calculateOverallScore().toFixed(1)}</span>
                         </div>
@@ -269,8 +271,9 @@ const ReviewModal = ({
                                         <span className="font-medium">{criteria.name}</span>
                                         <StarRating
                                             value={criteriaScores[criteria.key] || 0}
-                                            onChange={value => handleCriteriaChange(criteria.key, value)}
+                                            onChange={isEditable ? value => handleCriteriaChange(criteria.key, value) : undefined}
                                             allowHalf={true}
+                                            readOnly={!isEditable}
                                         />
                                     </div>
                                     <p className="text-xs text-gray-500">{criteria.description}</p>
@@ -280,14 +283,18 @@ const ReviewModal = ({
                     </div>
 
                     <div className="mb-6">
-                        <h4 className="font-medium mb-2">Your Comments</h4>
+                        <h4 className="font-medium mb-2">
+                            {isEditable ? 'Your Comments' : 'Reviewer Comments'}
+                        </h4>
                         <textarea
-                            className="w-full border border-gray-300 rounded p-2"
+                            className={`w-full border border-gray-300 rounded p-2 ${!isEditable ? 'bg-gray-50' : ''}`}
                             rows="6"
                             style={{ height: '150px', resize: 'vertical' }}
                             value={comment}
                             onChange={handleCommentChange}
-                            placeholder={`Add your comments about this ${artifact.artifactType || 'artifact'}...`}
+                            placeholder={`${isEditable ? 'Add' : 'View'} comments about this ${artifact.artifactType || 'artifact'}...`}
+                            readOnly={!isEditable}
+                            disabled={!isAdmin}
                         ></textarea>
                     </div>
 
@@ -296,14 +303,16 @@ const ReviewModal = ({
                             className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded mr-2"
                             onClick={handleClose}
                         >
-                            Cancel
+                            {isEditable ? 'Cancel' : 'Close'}
                         </button>
-                        <button
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
-                            onClick={handleSave}
-                        >
-                            Save Review
-                        </button>
+                        {isEditable && (
+                            <button
+                                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                                onClick={handleSave}
+                            >
+                                Save Review
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

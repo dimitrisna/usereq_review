@@ -21,9 +21,16 @@ import RegisterPage from './pages/RegisterPage';
 const ProtectedRoute = () => {
   const { currentUser, loading } = useAuth();
   
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
+  if (loading) return (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+      <div className="flex flex-col items-center space-y-4">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-opacity-60"></div>
+        <div className="text-xl text-blue-700 font-medium">
+          Loading...<span className="animate-pulse">...</span>
+        </div>
+      </div>
+    </div>
+  );
   
   if (!currentUser) {
     return <Navigate to="/login" />;

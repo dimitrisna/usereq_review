@@ -71,7 +71,9 @@ const RequirementsPage = () => {
   // Track if comment is dirty (has unsaved changes)
   const [commentDirty, setCommentDirty] = useState(false);
 
+  // Get current user and determine admin status
   const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'Admin';
 
   useEffect(() => {
     const fetchData = async () => {
@@ -137,8 +139,9 @@ const RequirementsPage = () => {
     setReviewDirty(isDirty);
   };
 
+  // Update handleCloseReviewModal to only show unsaved changes for admins
   const handleCloseReviewModal = () => {
-    if (reviewDirty) {
+    if (reviewDirty && isAdmin) {
       setShowUnsavedChangesModal(true);
     } else {
       setShowModal(false);
@@ -179,7 +182,14 @@ const RequirementsPage = () => {
     return sum / scores.length;
   }, [currentReview.scores]);
 
+  // Update saveReview function with permission check
   const saveReview = async () => {
+    // Only allow admin users to save reviews
+    if (!isAdmin) {
+      console.log('[RequirementsPage] Non-admin user attempted to save a review');
+      return;
+    }
+
     try {
       if (!selectedRequirement) {
         console.error('No requirement selected!');
@@ -238,7 +248,14 @@ const RequirementsPage = () => {
     }
   };
 
+  // Update saveGeneralCommentHandler with permission check
   const saveGeneralCommentHandler = async () => {
+    // Only allow admin users to save general comments
+    if (!isAdmin) {
+      console.log('[RequirementsPage] Non-admin user attempted to save a general comment');
+      return;
+    }
+
     try {
       await saveGeneralComment(projectId, 'requirements', generalComment);
       setOriginalGeneralComment(generalComment);
@@ -341,7 +358,7 @@ const RequirementsPage = () => {
                       <span className="px-2 py-1 bg-gray-100 rounded text-xs">{req.system_priority || 'N/A'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {req.reviewed ? <StarRating value={req.rating} allowHalf={true} /> : '-'}
+                      {req.reviewed ? <StarRating value={req.rating} allowHalf={true} readOnly={true} /> : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${req.reviewed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
@@ -353,7 +370,10 @@ const RequirementsPage = () => {
                         className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded text-sm"
                         onClick={() => openReviewModal(req)}
                       >
-                        {req.reviewed ? 'Edit Review' : 'Review'}
+
+                        {isAdmin
+                          ? (req.reviewed ? 'Edit Review' : 'Review')
+                          : 'View Review'}
                       </button>
                     </td>
                   </tr>
@@ -377,14 +397,16 @@ const RequirementsPage = () => {
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">General Comments</h2>
               <textarea
-                className="w-full border border-gray-300 rounded p-2"
-                placeholder="Add general comments about all requirements..."
+                className={`w-full border border-gray-300 rounded p-2 ${!isAdmin ? 'bg-gray-50' : ''}`}
+                placeholder={`${isAdmin ? 'Add' : 'View'} general comments about all requirements...`}
                 rows="12"
                 style={{ height: '250px', resize: 'vertical' }}
                 value={generalComment}
                 onChange={(e) => setGeneralComment(e.target.value)}
+                readOnly={!isAdmin}
+                disabled={!isAdmin}
               ></textarea>
-              {commentDirty && (
+              {commentDirty && isAdmin && (
                 <div className="mt-4 flex justify-end">
                   <button
                     className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
@@ -456,6 +478,7 @@ const RequirementsPage = () => {
                     value={calculateReviewOverallScore()}
                     size="lg"
                     allowHalf={true}
+                    readOnly={true}
                   />
                   <span className="ml-3 text-gray-600">{calculateReviewOverallScore().toFixed(1)}</span>
                 </div>
@@ -471,8 +494,9 @@ const RequirementsPage = () => {
                         <span className="font-medium">{criteria.name}</span>
                         <StarRating
                           value={currentReview.scores?.[criteria.key] || 0}
-                          onChange={value => handleScoreChange(criteria.key, value)}
+                          onChange={isAdmin ? value => handleScoreChange(criteria.key, value) : undefined}
                           allowHalf={true}
+                          readOnly={!isAdmin}
                         />
                       </div>
                       <p className="text-xs text-gray-500">{criteria.description}</p>
@@ -482,14 +506,16 @@ const RequirementsPage = () => {
               </div>
 
               <div className="mb-6">
-                <h4 className="font-medium mb-2">Your Comments</h4>
+                <h4 className="font-medium mb-2">{isAdmin ? 'Your Comments' : 'Reviewer Comments'}</h4>
                 <textarea
-                  className="w-full border border-gray-300 rounded p-2"
+                  className={`w-full border border-gray-300 rounded p-2 ${!isAdmin ? 'bg-gray-50' : ''}`}
                   rows="6"
                   style={{ height: '150px', resize: 'vertical' }}
                   value={currentReview.comment}
-                  onChange={(e) => handleReviewChange({ comment: e.target.value })}
-                  placeholder="Add your comments about this requirement..."
+                  onChange={isAdmin ? (e) => handleReviewChange({ comment: e.target.value }) : undefined}
+                  placeholder={`${isAdmin ? 'Add' : 'View'} comments about this requirement...`}
+                  readOnly={!isAdmin}
+                  disabled={!isAdmin}
                 ></textarea>
               </div>
 
@@ -498,14 +524,16 @@ const RequirementsPage = () => {
                   className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded mr-2"
                   onClick={handleCloseReviewModal}
                 >
-                  Cancel
+                  {isAdmin ? 'Cancel' : 'Close'}
                 </button>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
-                  onClick={saveReview}
-                >
-                  Save Review
-                </button>
+                {isAdmin && (
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                    onClick={saveReview}
+                  >
+                    Save Review
+                  </button>
+                )}
               </div>
             </div>
           </div>

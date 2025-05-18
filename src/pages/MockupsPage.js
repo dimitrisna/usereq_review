@@ -77,6 +77,7 @@ const MockupsPage = () => {
   const [commentDirty, setCommentDirty] = useState(false);
 
   const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'Admin';
 
   // Function to refresh aggregate rubric data
   const refreshAggregateRubricData = async () => {
@@ -174,11 +175,11 @@ const MockupsPage = () => {
 
   const handleCloseReviewModal = () => {
     console.log('[MockupsPage] Close modal requested, dirty state:', reviewDirty);
-    if (reviewDirty) {
+    if (reviewDirty && isAdmin) {
       console.log('[MockupsPage] Showing unsaved changes modal');
       setShowUnsavedChangesModal(true);
     } else {
-      console.log('[MockupsPage] No changes, closing modal directly');
+      console.log('[MockupsPage] No changes or not admin, closing modal directly');
       setShowModal(false);
       setSelectedMockup(null);
       setCurrentReview({ comment: '', scores: {} });
@@ -222,6 +223,12 @@ const MockupsPage = () => {
   }, [currentReview.scores]);
 
   const saveReview = async () => {
+    // Only allow admin users to save reviews
+    if (!isAdmin) {
+      console.log('[MockupsPage] Non-admin user attempted to save a review');
+      return;
+    }
+    
     try {
       console.log('[MockupsPage] Starting save review process');
       console.log('[MockupsPage] Current review state:', currentReview);
@@ -293,6 +300,12 @@ const MockupsPage = () => {
   };
 
   const saveGeneralCommentHandler = async () => {
+    // Only allow admin users to save general comments
+    if (!isAdmin) {
+      console.log('[MockupsPage] Non-admin user attempted to save a general comment');
+      return;
+    }
+    
     try {
       await saveGeneralComment(projectId, 'mockups', generalComment);
       setOriginalGeneralComment(generalComment);
@@ -318,21 +331,6 @@ const MockupsPage = () => {
       ...newData
     }));
   };
-
-  // Handler for navigating to another mockup - not needed with popup approach
-  // const handleNavigateToScreen = (targetMockup) => {
-  //   // If there are unsaved changes, save them first
-  //   if (reviewDirty) {
-  //     saveReview();
-  //   }
-  //   
-  //   // Find the full mockup object from our list
-  //   const fullMockup = mockups.find(m => m._id === targetMockup._id);
-  //   if (fullMockup) {
-  //     // Open the review modal for the target mockup
-  //     openReviewModal(fullMockup);
-  //   }
-  // };
 
   if (loading) return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
@@ -376,6 +374,7 @@ const MockupsPage = () => {
             artifacts={mockups}
             onReview={openReviewModal}
             artifactName="mockup"
+            isAdmin={isAdmin}
           />
         </div>
 
@@ -393,14 +392,16 @@ const MockupsPage = () => {
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">General Comments</h2>
               <textarea
-                className="w-full border border-gray-300 rounded p-2"
-                placeholder={`Add general comments about all mockups...`}
+                className={`w-full border border-gray-300 rounded p-2 ${!isAdmin ? 'bg-gray-50' : ''}`}
+                placeholder={`${isAdmin ? 'Add' : 'View'} general comments about all mockups...`}
                 rows="12"
                 style={{ height: '250px', resize: 'vertical' }}
                 value={generalComment}
                 onChange={(e) => setGeneralComment(e.target.value)}
+                readOnly={!isAdmin}
+                disabled={!isAdmin}
               ></textarea>
-              {commentDirty && (
+              {commentDirty && isAdmin && (
                 <div className="mt-4 flex justify-end">
                   <button
                     className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
@@ -427,6 +428,7 @@ const MockupsPage = () => {
             onDirtyStateChange={handleReviewDirtyChange}
             onReviewChange={handleReviewChange}
             onPreviewLinkedItem={handlePreviewLinkedItem}
+            isAdmin={isAdmin}
           />
         )}
 

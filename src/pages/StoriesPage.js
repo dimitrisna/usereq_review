@@ -75,6 +75,7 @@ const StoriesPage = () => {
   const [commentDirty, setCommentDirty] = useState(false);
 
   const { currentUser } = useAuth();
+  const isAdmin = currentUser?.role === 'Admin';
 
   // Function to refresh aggregate rubric data
   const refreshAggregateRubricData = async () => {
@@ -159,7 +160,7 @@ const StoriesPage = () => {
   };
 
   const handleCloseReviewModal = () => {
-    if (reviewDirty) {
+    if (reviewDirty && isAdmin) {
       setShowUnsavedChangesModal(true);
     } else {
       setShowModal(false);
@@ -205,6 +206,13 @@ const StoriesPage = () => {
   }, [currentReview.scores]);
 
   const saveReview = async () => {
+    // Only allow admin users to save reviews
+    if (!isAdmin) {
+      console.log('[StoriesPage] Non-admin user attempted to save a review');
+      showToast('Permission denied: Only admins can save reviews', 'error');
+      return;
+    }
+
     try {
       if (!selectedStory) {
         console.error('No story selected!');
@@ -263,6 +271,13 @@ const StoriesPage = () => {
   };
 
   const saveGeneralCommentHandler = async () => {
+    // Only allow admin users to save general comments
+    if (!isAdmin) {
+      console.log('[StoriesPage] Non-admin user attempted to save a general comment');
+      showToast('Permission denied: Only admins can save comments', 'error');
+      return;
+    }
+
     try {
       await saveGeneralComment(projectId, 'stories', generalComment);
       setOriginalGeneralComment(generalComment);
@@ -276,6 +291,8 @@ const StoriesPage = () => {
 
   // Handler for review changes from the modal
   const handleReviewChange = (newData) => {
+    if (!isAdmin) return;
+
     setCurrentReview(prev => ({
       ...prev,
       ...newData
@@ -285,6 +302,8 @@ const StoriesPage = () => {
 
   // Update specific score
   const handleScoreChange = (key, value) => {
+    if (!isAdmin) return;
+
     setCurrentReview(prev => ({
       ...prev,
       scores: {
@@ -396,6 +415,11 @@ const StoriesPage = () => {
               </Link>
             )}
           </h1>
+          {!isAdmin && (
+            <div className="mt-2 text-sm text-gray-600 bg-gray-100 inline-block px-3 py-1 rounded-md">
+              <span className="font-medium">View-only mode:</span> You need admin privileges to edit reviews
+            </div>
+          )}
         </div>
 
         {/* Stories Table */}
@@ -431,7 +455,9 @@ const StoriesPage = () => {
                         className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-1 px-3 rounded text-sm"
                         onClick={() => openReviewModal(story)}
                       >
-                        {story.reviewed ? 'Edit Review' : 'Review'}
+                        {isAdmin
+                          ? (story.reviewed ? 'Edit Review' : 'Review')
+                          : 'View Review'}
                       </button>
                     </td>
                   </tr>
@@ -455,14 +481,16 @@ const StoriesPage = () => {
             <div className="p-6">
               <h2 className="text-xl font-bold mb-4">General Comments</h2>
               <textarea
-                className="w-full border border-gray-300 rounded p-2"
-                placeholder="Add general comments about all user stories..."
+                className={`w-full border border-gray-300 rounded p-2 ${!isAdmin ? 'bg-gray-50' : ''}`}
+                placeholder={`${isAdmin ? 'Add' : 'View'} general comments about all user stories...`}
                 rows="12"
                 style={{ height: '250px', resize: 'vertical' }}
                 value={generalComment}
-                onChange={(e) => setGeneralComment(e.target.value)}
+                onChange={(e) => isAdmin && setGeneralComment(e.target.value)}
+                readOnly={!isAdmin}
+                disabled={!isAdmin}
               ></textarea>
-              {commentDirty && (
+              {commentDirty && isAdmin && (
                 <div className="mt-4 flex justify-end">
                   <button
                     className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
@@ -481,7 +509,9 @@ const StoriesPage = () => {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-6 max-w-4xl w-full max-h-screen overflow-y-auto">
               <div className="flex justify-between items-start mb-4">
-                <h2 className="text-xl font-bold">Review Story: {selectedStory.title || `Story #${selectedStory.seq || 'N/A'}`}</h2>
+                <h2 className="text-xl font-bold">
+                  {isAdmin ? 'Review' : 'View'} Story: {selectedStory.title || `Story #${selectedStory.seq || 'N/A'}`}
+                </h2>
                 <button
                   className="text-gray-500 hover:text-gray-700 text-xl"
                   onClick={handleCloseReviewModal}
@@ -516,12 +546,13 @@ const StoriesPage = () => {
               )}
 
               <div className="mb-6">
-                <h4 className="font-medium mb-3">Overall Rating (Auto-calculated)</h4>
+                <h4 className="font-medium mb-3">Overall Rating {isAdmin && "(Auto-calculated)"}</h4>
                 <div className="flex items-center">
                   <StarRating
                     value={calculateReviewOverallScore()}
                     size="lg"
                     allowHalf={true}
+                    readOnly={true}
                   />
                   <span className="ml-3 text-gray-600">{calculateReviewOverallScore().toFixed(1)}</span>
                 </div>
@@ -537,8 +568,9 @@ const StoriesPage = () => {
                         <span className="font-medium">{criteria.name}</span>
                         <StarRating
                           value={currentReview.scores?.[criteria.key] || 0}
-                          onChange={value => handleScoreChange(criteria.key, value)}
+                          onChange={isAdmin ? value => handleScoreChange(criteria.key, value) : undefined}
                           allowHalf={true}
+                          readOnly={!isAdmin}
                         />
                       </div>
                       <p className="text-xs text-gray-500">{criteria.description}</p>
@@ -548,14 +580,16 @@ const StoriesPage = () => {
               </div>
 
               <div className="mb-6">
-                <h4 className="font-medium mb-2">Your Comments</h4>
+                <h4 className="font-medium mb-2">{isAdmin ? 'Your Comments' : 'Reviewer Comments'}</h4>
                 <textarea
-                  className="w-full border border-gray-300 rounded p-2"
+                  className={`w-full border border-gray-300 rounded p-2 ${!isAdmin ? 'bg-gray-50' : ''}`}
                   rows="6"
                   style={{ height: '150px', resize: 'vertical' }}
                   value={currentReview.comment}
-                  onChange={(e) => handleReviewChange({ comment: e.target.value })}
-                  placeholder="Add your comments about this user story..."
+                  onChange={isAdmin ? (e) => handleReviewChange({ comment: e.target.value }) : undefined}
+                  placeholder={`${isAdmin ? 'Add' : 'View'} comments about this user story...`}
+                  readOnly={!isAdmin}
+                  disabled={!isAdmin}
                 ></textarea>
               </div>
 
@@ -564,14 +598,16 @@ const StoriesPage = () => {
                   className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded mr-2"
                   onClick={handleCloseReviewModal}
                 >
-                  Cancel
+                  {isAdmin ? 'Cancel' : 'Close'}
                 </button>
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
-                  onClick={saveReview}
-                >
-                  Save Review
-                </button>
+                {isAdmin && (
+                  <button
+                    className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                    onClick={saveReview}
+                  >
+                    Save Review
+                  </button>
+                )}
               </div>
             </div>
           </div>
