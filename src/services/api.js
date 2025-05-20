@@ -1,8 +1,7 @@
 // src/services/api.js
 import axios from 'axios';
 
-const API_URL = 'http://localhost:4000';
-
+const API_URL = process.env.REACT_APP_API_URL;
 const api = axios.create({
   baseURL: API_URL,
   headers: {
@@ -84,9 +83,6 @@ export const updateMockup = (id, data) => api.put(`/api/mockups/${id}`, data);
 
 // Reviews endpoints
 export const submitReview = (artifactType, artifactId, rating, comment, scores = {}) => {
-  console.log(`[API] Submitting review for ${artifactType} ${artifactId}:`, {
-    artifactType, artifactId, rating, comment, scores
-  });
   return api.post('/api/reviews', {
     artifactType,
     artifactId,
@@ -95,7 +91,6 @@ export const submitReview = (artifactType, artifactId, rating, comment, scores =
     ...scores
   })
     .then(response => {
-      console.log('[API] Submit review response:', response.data);
       return response;
     })
     .catch(error => {

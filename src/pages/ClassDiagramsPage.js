@@ -5,29 +5,29 @@ import { getClassDiagramsReviewData, submitReview, saveGeneralComment } from '..
 // Define the criteria for class diagrams
 const classDiagramCriteria = [
   {
-    name: "Class Structure",
-    key: "classStructureScore",
-    description: "Appropriate use of classes, attributes, methods"
+    name: "Boundary Objects",
+    key: "boundaryObjectsScore",
+    description: "Attributes have scope/name/datatype, methods have return type/name/parameters. UI classes include event handlers. Proper relationships with other boundary objects."
   },
   {
-    name: "Relationship Modeling",
-    key: "relationshipModelingScore",
-    description: "Appropriate associations, inheritance, composition"
+    name: "Control Objects",
+    key: "controlObjectsScore",
+    description: "No attributes (except business logic). Contains only control-related methods (no UI event handlers, no setters/getters)."
   },
   {
-    name: "Completeness",
-    key: "completenessScore",
-    description: "Covers all required functionality"
+    name: "Entity Objects",
+    key: "entityObjectsScore",
+    description: "Has proper attributes with corresponding getter/setter methods and appropriate data types. No other methods except getters/setters and constructors."
   },
   {
-    name: "Clarity",
-    key: "clarityScore",
-    description: "Naming and organization are clear and consistent"
+    name: "UML Notation",
+    key: "umlNotationScore",
+    description: "Correctly uses UML symbols, notations, and conventions in the class diagram."
   },
   {
-    name: "Design Principles",
-    key: "designPrinciplesScore",
-    description: "Follows OOP principles (encapsulation, etc.)"
+    name: "Architectural Design",
+    key: "architecturalDesignScore",
+    description: "UI connects only with controllers, Proxies connect only with controllers, Entities connect only with controllers. No direct UI/Proxy to Entity connections."
   }
 ];
 

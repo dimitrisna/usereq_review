@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import DiagramViewer from '../common/DiagramViewer';
 
 /**
  * Helper to format Gherkin-style user stories with color highlighting
@@ -65,21 +66,27 @@ const formatStoryText = (text) => {
 };
 
 /**
- * Modal for previewing linked items (requirements, stories, etc.)
- * with proper formatting for stories
+ * Modal for previewing linked items (requirements, stories, diagrams, etc.)
+ * with proper rendering for each type, including diagrams
  */
 const LinkedItemPreviewModal = ({ isOpen, item, onClose }) => {
   if (!isOpen || !item) return null;
 
-  // Determine item type based on properties
+  // Improved item type detection
+  const isDiagram = item.url && (
+    item.filename?.toLowerCase().includes('.drawio') || 
+    item.mimetype?.includes('application/xml') ||
+    (item.url?.toLowerCase().includes('.png') || item.url?.toLowerCase().includes('.jpg') || item.url?.toLowerCase().includes('.svg'))
+  );
+
   const itemType = item.text && item.title ? 'story' :
                   item.text ? 'requirement' :
-                  item.filename?.includes('drawio') ? 'diagram' : 'unknown';
+                  isDiagram ? 'diagram' : 'unknown';
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50" onClick={onClose}>
       <div 
-        className="bg-white rounded-lg shadow-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto" 
+        className="bg-white rounded-lg shadow-lg p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto relative" 
         onClick={e => e.stopPropagation()} // Prevent closing when clicking inside
       >
         <div className="flex justify-between items-start mb-4">
@@ -87,6 +94,7 @@ const LinkedItemPreviewModal = ({ isOpen, item, onClose }) => {
             {
               itemType === 'story' ? `Story: ${item.title || ''}` :
               itemType === 'requirement' ? `Requirement #${item.seq || ''}` : 
+              itemType === 'diagram' ? `Diagram: ${item.title || ''}` :
               item.title || 'Item Preview'
             }
           </h2>
@@ -98,6 +106,7 @@ const LinkedItemPreviewModal = ({ isOpen, item, onClose }) => {
           </button>
         </div>
 
+        {/* Content area */}
         <div className="space-y-4">
           {/* For user stories */}
           {itemType === 'story' && (
@@ -182,10 +191,41 @@ const LinkedItemPreviewModal = ({ isOpen, item, onClose }) => {
                 </div>
               )}
 
-              <div className="border border-gray-200 rounded">
-                <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
-                  <p className="text-gray-500">Diagram preview not available</p>
-                </div>
+              <div className="border border-gray-200 rounded mt-4">
+                {item.url ? (
+                  <div className="w-full" style={{ height: '400px' }}>
+                    {/* Use the DiagramViewer for .drawio files */}
+                    {item.filename?.toLowerCase().includes('.drawio') || 
+                     item.mimetype?.includes('application/xml') ? (
+                      <DiagramViewer 
+                        url={item.url} 
+                        filename={item.filename}
+                        title={item.title}
+                        mimetype={item.mimetype}
+                      />
+                    ) : (
+                      /* For regular image files */
+                      <div className="w-full h-full flex items-center justify-center bg-gray-50 p-2">
+                        <img 
+                          src={item.url} 
+                          alt={item.title || "Diagram"} 
+                          className="max-w-full max-h-full object-contain"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = 'https://via.placeholder.com/800x400?text=Image+Not+Available';
+                          }}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="w-full h-64 bg-gray-100 flex items-center justify-center">
+                    <p className="text-gray-500">
+                      Diagram preview not available
+                      {item.filename && <span className="block mt-1 text-sm">File: {item.filename}</span>}
+                    </p>
+                  </div>
+                )}
               </div>
             </>
           )}
@@ -196,15 +236,6 @@ const LinkedItemPreviewModal = ({ isOpen, item, onClose }) => {
               <p>No preview available for this item type.</p>
             </div>
           )}
-        </div>
-
-        <div className="mt-6 flex justify-end">
-          <button
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
-            onClick={onClose}
-          >
-            Close
-          </button>
         </div>
       </div>
     </div>

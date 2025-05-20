@@ -82,14 +82,12 @@ const MockupsPage = () => {
   // Function to refresh aggregate rubric data
   const refreshAggregateRubricData = async () => {
     try {
-      console.log('[MockupsPage] Refreshing aggregate rubric data');
       
       // Directly re-fetch the review data to get updated aggregate information
       const response = await getMockupsReviewData(projectId);
       
       // Only update the aggregate rubric portion of state
       if (response.data.aggregateRubric) {
-        console.log('[MockupsPage] Updated aggregate rubric from API:', response.data.aggregateRubric);
         setAggregateRubric(response.data.aggregateRubric);
       }
     } catch (err) {
@@ -101,10 +99,8 @@ const MockupsPage = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        console.log(`[MockupsPage] Fetching data for mockups in project ${projectId}`);
 
         const response = await getMockupsReviewData(projectId);
-        console.log('[MockupsPage] API Response:', response.data);
         
         // Extract project name if available in response
         if (response.data.projectName) {
@@ -141,7 +137,6 @@ const MockupsPage = () => {
   }, [generalComment, originalGeneralComment]);
 
   const openReviewModal = (mockup) => {
-    console.log('[MockupsPage] Opening review modal for mockup:', mockup);
     setSelectedMockup(mockup);
 
     // Deep clone the scores to avoid reference issues
@@ -153,7 +148,6 @@ const MockupsPage = () => {
       scores: deepClonedScores
     };
     
-    console.log('[MockupsPage] Setting current review to:', reviewData);
     setCurrentReview(reviewData);
 
     // Store original values for dirty check
@@ -162,24 +156,19 @@ const MockupsPage = () => {
       scores: deepClonedScores
     };
     
-    console.log('[MockupsPage] Original review set to:', originalReviewRef.current);
     setReviewDirty(false);
     setShowModal(true);
   };
 
   // Handler for dirty state changes from the modal
   const handleReviewDirtyChange = (isDirty) => {
-    console.log('[MockupsPage] Review dirty state changed:', isDirty);
     setReviewDirty(isDirty);
   };
 
   const handleCloseReviewModal = () => {
-    console.log('[MockupsPage] Close modal requested, dirty state:', reviewDirty);
     if (reviewDirty && isAdmin) {
-      console.log('[MockupsPage] Showing unsaved changes modal');
       setShowUnsavedChangesModal(true);
     } else {
-      console.log('[MockupsPage] No changes or not admin, closing modal directly');
       setShowModal(false);
       setSelectedMockup(null);
       setCurrentReview({ comment: '', scores: {} });
@@ -187,14 +176,11 @@ const MockupsPage = () => {
   };
 
   const handleUnsavedChangesModalAction = (action) => {
-    console.log('[MockupsPage] Unsaved changes action:', action);
     setShowUnsavedChangesModal(false);
 
     if (action === 'save') {
-      console.log('[MockupsPage] Saving changes before closing');
       saveReview();
     } else if (action === 'discard') {
-      console.log('[MockupsPage] Discarding changes and closing');
       setShowModal(false);
       setSelectedMockup(null);
       setCurrentReview({ comment: '', scores: {} });
@@ -225,14 +211,10 @@ const MockupsPage = () => {
   const saveReview = async () => {
     // Only allow admin users to save reviews
     if (!isAdmin) {
-      console.log('[MockupsPage] Non-admin user attempted to save a review');
       return;
     }
     
     try {
-      console.log('[MockupsPage] Starting save review process');
-      console.log('[MockupsPage] Current review state:', currentReview);
-      
       if (!selectedMockup) {
         console.error('[MockupsPage] No mockup selected!');
         return;
@@ -240,27 +222,15 @@ const MockupsPage = () => {
       
       // Calculate overall rating from category scores
       const overallRating = calculateReviewOverallScore();
-      console.log('[MockupsPage] Calculated overall rating:', overallRating);
 
       try {
-        console.log('[MockupsPage] Calling submitReview with:', {
-          artifactType: 'mockup',
-          artifactId: selectedMockup._id,
-          rating: overallRating,
-          comment: currentReview.comment,
-          scores: currentReview.scores
-        });
-
-        const response = await submitReview(
+        await submitReview(
           'mockup',
           selectedMockup._id, 
           overallRating, 
           currentReview.comment, 
           currentReview.scores
         );
-        
-        console.log('[MockupsPage] API response:', response.data);
-
         // Create a completely new object for the updated mockup
         const updatedMockup = {
           ...selectedMockup,
@@ -274,10 +244,6 @@ const MockupsPage = () => {
         const updatedMockups = mockups.map(mockup => 
           mockup._id === selectedMockup._id ? updatedMockup : mockup
         );
-        
-        console.log('[MockupsPage] Updated mockup:', updatedMockup);
-        console.log('[MockupsPage] Updating mockups array with new review data');
-        
         // Update state in sequence
         setMockups(updatedMockups);
         setReviewDirty(false);
@@ -302,7 +268,6 @@ const MockupsPage = () => {
   const saveGeneralCommentHandler = async () => {
     // Only allow admin users to save general comments
     if (!isAdmin) {
-      console.log('[MockupsPage] Non-admin user attempted to save a general comment');
       return;
     }
     
@@ -325,7 +290,6 @@ const MockupsPage = () => {
 
   // Handler for review changes from the modal
   const handleReviewChange = (newData) => {
-    console.log('[MockupsPage] Review data changed in modal:', newData);
     setCurrentReview(prev => ({
       ...prev,
       ...newData

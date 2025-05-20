@@ -5,30 +5,20 @@ import { getSequenceDiagramsReviewData, submitReview, saveGeneralComment } from 
 // Define the criteria for sequence diagrams
 const sequenceDiagramCriteria = [
   {
-    name: "Object Interaction",
-    key: "objectInteractionScore",
-    description: "Correctly shows interaction between objects"
-  },
-  {
     name: "Message Flow",
     key: "messageFlowScore",
     description: "Proper sequence of messages"
   },
   {
-    name: "Return Values",
-    key: "returnValuesScore",
-    description: "Properly shows return values and responses"
-  },
-  {
-    name: "Exception Handling",
-    key: "exceptionHandlingScore",
-    description: "Includes error scenarios"
-  },
-  {
     name: "Completeness",
     key: "completenessScore",
     description: "Covers all necessary interactions"
-  }
+  },
+  {
+    name: "UML Correctness",
+    key: "umlCorrectnessScore",
+    description: "Follows UML sequence diagram standards and notation"
+  },
 ];
 
 const SequenceDiagramsPage = () => {

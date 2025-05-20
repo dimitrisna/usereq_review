@@ -32,15 +32,13 @@ const ReviewModal = ({
 }) => {
     const [comment, setComment] = useState('');
     const [criteriaScores, setCriteriaScores] = useState({});
-    
+
     // Determine if the current artifact is editable by this user
     const isEditable = isAdmin === true;
 
     // Initialize review data when modal opens
     useEffect(() => {
         if (isOpen && artifact) {
-            console.log('[ReviewModal] Modal opened with artifact:', artifact);
-            console.log('[ReviewModal] Initial review data:', initialReview);
 
             setComment(initialReview.comment || '');
 
@@ -49,8 +47,6 @@ const ReviewModal = ({
             criteriaDefinitions.forEach(criteria => {
                 scores[criteria.key] = initialReview.scores?.[criteria.key] || 0;
             });
-
-            console.log('[ReviewModal] Setting criteria scores to:', scores);
             setCriteriaScores(scores);
         }
     }, [isOpen, artifact, initialReview, criteriaDefinitions]);
@@ -82,8 +78,6 @@ const ReviewModal = ({
 
     const handleCriteriaChange = (key, value) => {
         if (!isEditable) return;
-
-        console.log(`[ReviewModal] Criteria ${key} changed to ${value}`);
 
         // Create a new scores object with the updated value
         const newScores = { ...criteriaScores, [key]: value };
@@ -123,10 +117,6 @@ const ReviewModal = ({
             comment,
             scores: criteriaScores
         };
-
-        console.log('[ReviewModal] Saving review with data:', reviewData);
-        console.log('[ReviewModal] Scores data structure:', criteriaScores);
-
         // Pass the data to the parent component
         onSave(reviewData);
     };
@@ -252,11 +242,12 @@ const ReviewModal = ({
                         <h4 className="font-medium mb-2">Overall Rating (Auto-calculated)</h4>
                         <div className="flex items-center">
                             <StarRating
-                                value={calculateOverallScore()}
+                                value={Math.round(calculateOverallScore() * 2) / 2}
                                 size="lg"
                                 allowHalf={true}
                                 readOnly={true}
                             />
+
                             <span className="ml-3 text-gray-600">{calculateOverallScore().toFixed(1)}</span>
                         </div>
                     </div>
@@ -270,11 +261,12 @@ const ReviewModal = ({
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="font-medium">{criteria.name}</span>
                                         <StarRating
-                                            value={criteriaScores[criteria.key] || 0}
+                                            value={Math.round((criteriaScores[criteria.key] || 0) * 2) / 2}
                                             onChange={isEditable ? value => handleCriteriaChange(criteria.key, value) : undefined}
                                             allowHalf={true}
                                             readOnly={!isEditable}
                                         />
+
                                     </div>
                                     <p className="text-xs text-gray-500">{criteria.description}</p>
                                 </div>

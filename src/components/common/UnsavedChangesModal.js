@@ -7,7 +7,6 @@ import React from 'react';
  * @param {function} onCancel - Callback when Cancel button is clicked
  */
 const UnsavedChangesModal = ({ onSave, onDiscard, onCancel }) => {
-  console.log('[UnsavedChangesModal] Rendering modal');
   
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -18,7 +17,6 @@ const UnsavedChangesModal = ({ onSave, onDiscard, onCancel }) => {
           <button
             className="px-4 py-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition-colors font-medium"
             onClick={() => {
-              console.log('[UnsavedChangesModal] Cancel clicked');
               onCancel();
             }}
           >
@@ -27,7 +25,6 @@ const UnsavedChangesModal = ({ onSave, onDiscard, onCancel }) => {
           <button
             className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors font-medium"
             onClick={() => {
-              console.log('[UnsavedChangesModal] Discard clicked');
               onDiscard();
             }}
           >
@@ -36,7 +33,6 @@ const UnsavedChangesModal = ({ onSave, onDiscard, onCancel }) => {
           <button
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors font-medium"
             onClick={() => {
-              console.log('[UnsavedChangesModal] Save clicked');
               onSave();
             }}
           >

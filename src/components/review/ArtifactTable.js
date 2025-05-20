@@ -47,7 +47,7 @@ const ArtifactTable = ({ artifacts, onReview, artifactName = "artifact", isAdmin
                                 </span>
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap">
-                                {artifact.reviewed ? <StarRating value={artifact.rating} allowHalf={true} readOnly={true} /> : '-'}
+                                {artifact.reviewed ? <StarRating value={Math.round(artifact.rating * 2) / 2} allowHalf={true} readOnly={true} /> : '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                 <button

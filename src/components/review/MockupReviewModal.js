@@ -8,16 +8,16 @@ import LinkedItemPreviewModal from './LinkedItemPreviewModal';
  */
 const ScreenPreviewPopup = ({ screen, onClose, isNext }) => {
   const colorClass = isNext ? 'green' : 'blue'; // Green for next, blue for previous
-  
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50" onClick={onClose}>
-      <div 
-        className={`bg-${colorClass}-50 rounded-lg shadow-xl p-4 max-w-xl w-full max-h-[90vh] overflow-y-auto border-l-4 border-${colorClass}-500`} 
+      <div
+        className={`bg-${colorClass}-50 rounded-lg shadow-xl p-4 max-w-xl w-full max-h-[90vh] overflow-y-auto border-l-4 border-${colorClass}-500`}
         onClick={e => e.stopPropagation()} // Prevent closing when clicking inside
       >
         <div className="flex justify-between items-start mb-2">
           <h3 className={`text-lg font-semibold text-${colorClass}-800`}>
-            {isNext ? '→ Next Screen: ' : '← Previous Screen: '} 
+            {isNext ? '→ Next Screen: ' : '← Previous Screen: '}
             {screen.title || `Screen #${screen.seq || ''}`}
           </h3>
           <button
@@ -27,18 +27,18 @@ const ScreenPreviewPopup = ({ screen, onClose, isNext }) => {
             ×
           </button>
         </div>
-        
+
         <div className="mb-3">
           {screen.description && (
             <p className="text-sm text-gray-600 mb-2">{screen.description}</p>
           )}
         </div>
-        
+
         <div className={`border border-${colorClass}-200 rounded bg-white p-2 flex items-center justify-center`} style={{ minHeight: '300px' }}>
           {screen.url ? (
-            <img 
-              src={screen.url} 
-              alt={screen.title || "Mockup"} 
+            <img
+              src={screen.url}
+              alt={screen.title || "Mockup"}
               className="max-w-full max-h-[300px] object-contain"
               onError={(e) => {
                 e.target.onerror = null;
@@ -77,20 +77,17 @@ const MockupReviewModal = ({
   const [criteriaScores, setCriteriaScores] = useState({});
   const [previewItem, setPreviewItem] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
-  
+
   // State for screen previews
   const [previewScreen, setPreviewScreen] = useState(null);
   const [isNextScreen, setIsNextScreen] = useState(false);
-  
+
   // Determine if the current artifact is editable by this user
   const isEditable = isAdmin === true;
 
   // Initialize review data when modal opens
   useEffect(() => {
     if (isOpen && artifact) {
-      console.log('[MockupReviewModal] Modal opened with artifact:', artifact);
-      console.log('[MockupReviewModal] Initial review data:', initialReview);
-
       setComment(initialReview.comment || '');
 
       // Initialize criteria scores from initialReview or with zeros
@@ -99,7 +96,6 @@ const MockupReviewModal = ({
         scores[criteria.key] = initialReview.scores?.[criteria.key] || 0;
       });
 
-      console.log('[MockupReviewModal] Setting criteria scores to:', scores);
       setCriteriaScores(scores);
     }
   }, [isOpen, artifact, initialReview, criteriaDefinitions]);
@@ -131,8 +127,6 @@ const MockupReviewModal = ({
 
   const handleCriteriaChange = (key, value) => {
     if (!isEditable) return;
-    
-    console.log(`[MockupReviewModal] Criteria ${key} changed to ${value}`);
 
     // Create a new scores object with the updated value
     const newScores = { ...criteriaScores, [key]: value };
@@ -148,7 +142,7 @@ const MockupReviewModal = ({
 
   const handleCommentChange = (e) => {
     if (!isEditable) return;
-    
+
     const newComment = e.target.value;
     setComment(newComment);
 
@@ -166,14 +160,12 @@ const MockupReviewModal = ({
 
   const handleSave = () => {
     if (!isEditable) return;
-    
+
     // Make sure we're structuring the data correctly
     const reviewData = {
       comment,
       scores: criteriaScores
     };
-
-    console.log('[MockupReviewModal] Saving review with data:', reviewData);
 
     // Pass the data to the parent component
     onSave(reviewData);
@@ -223,8 +215,8 @@ const MockupReviewModal = ({
                   <span className="text-gray-600 mr-2">Previous Screens:</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {artifact.previousScreens.map(screen => (
-                      <button 
-                        key={screen._id} 
+                      <button
+                        key={screen._id}
                         className="px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 text-sm border border-blue-300 flex items-center"
                         onClick={() => handleScreenPreview(screen, false)}
                       >
@@ -235,14 +227,14 @@ const MockupReviewModal = ({
                   </div>
                 </div>
               )}
-              
+
               {artifact.nextScreens?.length > 0 && (
                 <div>
                   <span className="text-gray-600 mr-2">Next Screens:</span>
                   <div className="flex flex-wrap gap-2 mt-1">
                     {artifact.nextScreens.map(screen => (
-                      <button 
-                        key={screen._id} 
+                      <button
+                        key={screen._id}
                         className="px-3 py-1 bg-green-100 text-green-700 rounded hover:bg-green-200 text-sm border border-green-300 flex items-center"
                         onClick={() => handleScreenPreview(screen, true)}
                       >
@@ -291,9 +283,9 @@ const MockupReviewModal = ({
               <h3 className="font-semibold mb-2">Mockup</h3>
               <div className="border border-gray-200 rounded flex items-center justify-center bg-gray-50 p-2" style={{ minHeight: '400px' }}>
                 {artifact.url ? (
-                  <img 
-                    src={artifact.url} 
-                    alt={artifact.title || "Mockup"} 
+                  <img
+                    src={artifact.url}
+                    alt={artifact.title || "Mockup"}
                     className="max-w-full max-h-[400px] object-contain"
                     onError={(e) => {
                       e.target.onerror = null;
@@ -318,7 +310,7 @@ const MockupReviewModal = ({
             <h4 className="font-medium mb-2">Overall Rating (Auto-calculated)</h4>
             <div className="flex items-center">
               <StarRating
-                value={calculateOverallScore()}
+                value={Math.round(calculateOverallScore() * 2) / 2}
                 size="lg"
                 allowHalf={true}
                 readOnly={true}
@@ -336,7 +328,7 @@ const MockupReviewModal = ({
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-medium">{criteria.name}</span>
                     <StarRating
-                      value={criteriaScores[criteria.key] || 0}
+                      value={Math.round((criteriaScores[criteria.key] || 0) * 2) / 2}
                       onChange={isEditable ? value => handleCriteriaChange(criteria.key, value) : undefined}
                       allowHalf={true}
                       readOnly={!isEditable}
@@ -390,10 +382,10 @@ const MockupReviewModal = ({
             onClose={() => setShowPreviewModal(false)}
           />
         )}
-        
+
         {/* Screen Preview Popup */}
         {previewScreen && (
-          <ScreenPreviewPopup 
+          <ScreenPreviewPopup
             screen={previewScreen}
             isNext={isNextScreen}
             onClose={() => setPreviewScreen(null)}

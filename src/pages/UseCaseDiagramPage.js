@@ -5,29 +5,19 @@ import { getUseCaseDiagramsReviewData, submitReview, saveGeneralComment } from '
 // Define the criteria for use case diagrams
 const useCaseDiagramCriteria = [
   {
-    name: "Actor Identification",
-    key: "actorIdentificationScore",
-    description: "Correctly identifies external actors"
+    name: "UML Syntax",
+    key: "umlSyntaxScore",
+    description: "Use case diagrams have been created with correct UML syntax"
   },
   {
-    name: "Use Case Definition",
-    key: "useCaseDefinitionScore",
-    description: "Use cases represent valuable user goals"
+    name: "Use Case Package Definition",
+    key: "useCasePackageScore",
+    description: "A complete use case package has been defined for each use case in the diagrams"
   },
   {
-    name: "Relationships",
-    key: "relationshipsScore",
-    description: "Proper use of include/extend relationships"
-  },
-  {
-    name: "System Boundary",
-    key: "systemBoundaryScore",
-    description: "Clear system boundaries"
-  },
-  {
-    name: "Completeness",
-    key: "completenessScore",
-    description: "Covers all user interactions with the system"
+    name: "Gherkin Specification",
+    key: "gherkinSpecificationScore",
+    description: "Each use case package adequately defines preconditions, triggers, and system responses for each Gherkin scenario"
   }
 ];
 

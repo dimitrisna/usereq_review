@@ -15,29 +15,19 @@ import {
 // Define the criteria for stories
 const storyCriteria = [
   {
-    name: "User Focus",
-    key: "userFocusScore",
-    description: "Story clearly identifies the user role"
+    name: "Story Format",
+    key: "storyFormatScore",
+    description: "User stories follow the proper format and structure (As a... I want to... So that...)"
   },
   {
-    name: "Value Proposition",
-    key: "valuePropositionScore",
-    description: "Story clearly states the benefit to the user"
+    name: "Feature Completion",
+    key: "featureCompletionScore",
+    description: "Each user story is fully defined and belongs to a complete feature package"
   },
   {
     name: "Acceptance Criteria",
     key: "acceptanceCriteriaScore",
-    description: "Clear criteria for when the story is complete"
-  },
-  {
-    name: "Size/Scope",
-    key: "sizeScore",
-    description: "Story is appropriately sized for implementation"
-  },
-  {
-    name: "Independence",
-    key: "independenceScore",
-    description: "Story can be implemented independently"
+    description: "Each user story has adequate acceptance criteria with preconditions, triggers, and expected system responses"
   }
 ];
 
@@ -80,14 +70,11 @@ const StoriesPage = () => {
   // Function to refresh aggregate rubric data
   const refreshAggregateRubricData = async () => {
     try {
-      console.log('Refreshing aggregate rubric data');
-
       // Directly re-fetch the review data to get updated aggregate information
       const response = await getStoriesReviewData(projectId);
 
       // Only update the aggregate rubric portion of state
       if (response.data.aggregateRubric) {
-        console.log('Updated aggregate rubric from API:', response.data.aggregateRubric);
         setAggregateRubric(response.data.aggregateRubric);
       }
     } catch (err) {
@@ -100,14 +87,12 @@ const StoriesPage = () => {
       try {
         setLoading(true);
         const response = await getStoriesReviewData(projectId);
-        console.log('API Response:', response.data);
 
         if (response.data.projectName) {
           setProjectName(response.data.projectName);
         }
 
         const { artifacts, generalComment, aggregateRubric } = response.data;
-        console.log('✅ Parsed aggregateRubric:', aggregateRubric);
         setStories(artifacts || []);
         setGeneralComment(generalComment || '');
         setOriginalGeneralComment(generalComment || '');
@@ -134,18 +119,15 @@ const StoriesPage = () => {
   }, [generalComment, originalGeneralComment]);
 
   const openReviewModal = (story) => {
-    console.log('Opening review modal for story:', story);
     setSelectedStory(story);
 
-    // Initialize current review state
+    // Initialize current review state with the correct keys
     const reviewData = {
       comment: story.comment || '',
       scores: story.scores || {
-        userFocusScore: 0,
-        valuePropositionScore: 0,
-        acceptanceCriteriaScore: 0,
-        sizeScore: 0,
-        independenceScore: 0
+        storyFormatScore: 0,
+        featureCompletionScore: 0,
+        acceptanceCriteriaScore: 0
       }
     };
 
@@ -154,10 +136,6 @@ const StoriesPage = () => {
     setShowModal(true);
   };
 
-  // Handler for dirty state changes from the modal
-  const handleReviewDirtyChange = (isDirty) => {
-    setReviewDirty(isDirty);
-  };
 
   const handleCloseReviewModal = () => {
     if (reviewDirty && isAdmin) {
@@ -195,20 +173,20 @@ const StoriesPage = () => {
 
   // Calculate overall rating from category scores
   const calculateReviewOverallScore = useCallback(() => {
-    const scores = Object.values(currentReview.scores || {});
-    if (scores.length === 0) return 0;
-    // Filter out undefined or null values
-    const validScores = scores.filter(score => score !== undefined && score !== null);
-    if (validScores.length === 0) return 0;
+    // Only calculate based on the keys defined in our criteria
+    const relevantScores = storyCriteria.map(criterion =>
+      Number(currentReview.scores?.[criterion.key] || 0)
+    );
 
-    const sum = validScores.reduce((total, score) => total + (Number(score) || 0), 0);
-    return sum / validScores.length;
+    if (relevantScores.length === 0) return 0;
+
+    const sum = relevantScores.reduce((total, score) => total + score, 0);
+    return sum / relevantScores.length;
   }, [currentReview.scores]);
 
   const saveReview = async () => {
     // Only allow admin users to save reviews
     if (!isAdmin) {
-      console.log('[StoriesPage] Non-admin user attempted to save a review');
       showToast('Permission denied: Only admins can save reviews', 'error');
       return;
     }
@@ -221,19 +199,14 @@ const StoriesPage = () => {
 
       // Calculate overall rating from category scores
       const overallRating = calculateReviewOverallScore();
-      console.log('Calculated overall rating:', overallRating);
-      console.log('Current scores:', currentReview.scores);
-
       try {
-        const response = await submitReview(
+        await submitReview(
           'story',
           selectedStory._id,
           overallRating,
           currentReview.comment,
           currentReview.scores
         );
-
-        console.log('API response:', response.data);
 
         // Create a completely new object for the updated story
         const updatedStory = {
@@ -273,7 +246,6 @@ const StoriesPage = () => {
   const saveGeneralCommentHandler = async () => {
     // Only allow admin users to save general comments
     if (!isAdmin) {
-      console.log('[StoriesPage] Non-admin user attempted to save a general comment');
       showToast('Permission denied: Only admins can save comments', 'error');
       return;
     }
@@ -448,7 +420,7 @@ const StoriesPage = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {story.reviewed ? <StarRating value={story.rating} allowHalf={true} /> : '-'}
+                      {story.reviewed ? <StarRating value={Math.round(story.rating * 2) / 2} allowHalf={true} /> : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <button
@@ -549,7 +521,7 @@ const StoriesPage = () => {
                 <h4 className="font-medium mb-3">Overall Rating {isAdmin && "(Auto-calculated)"}</h4>
                 <div className="flex items-center">
                   <StarRating
-                    value={calculateReviewOverallScore()}
+                    value={Math.round(calculateReviewOverallScore() * 2) / 2}
                     size="lg"
                     allowHalf={true}
                     readOnly={true}
@@ -567,7 +539,7 @@ const StoriesPage = () => {
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-medium">{criteria.name}</span>
                         <StarRating
-                          value={currentReview.scores?.[criteria.key] || 0}
+                          value={Math.round((currentReview.scores?.[criteria.key] || 0) * 2) / 2}
                           onChange={isAdmin ? value => handleScoreChange(criteria.key, value) : undefined}
                           allowHalf={true}
                           readOnly={!isAdmin}

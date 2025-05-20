@@ -33,7 +33,8 @@ const Dashboard = () => {
   // Main effect to fetch projects based on pagination
   useEffect(() => {
     fetchProjects(pagination.currentPage, pagination.itemsPerPage, searchTerm, sortConfig.key, sortConfig.direction);
-  }, [pagination.currentPage, pagination.itemsPerPage, sortConfig]);
+  }, [pagination.currentPage, pagination.itemsPerPage, sortConfig, searchTerm]);
+
 
   // Debounced search effect
   useEffect(() => {
@@ -46,7 +47,7 @@ const Dashboard = () => {
     return () => {
       clearTimeout(handler);
     };
-  }, [searchTerm]);
+  }, [searchTerm, pagination.itemsPerPage, sortConfig.key, sortConfig.direction]);
 
   // Modified to include search and sort parameters for the API
   const fetchProjects = async (page, limit, search = '', sortField = 'name', sortDirection = 'ascending') => {
@@ -263,7 +264,7 @@ const Dashboard = () => {
                         <div className="flex flex-col items-start">
                           <div className="flex items-center gap-2">
                             <StarRating
-                              value={typeof project.overallAverageGrade === 'number' ? project.overallAverageGrade : 0}
+                              value={Math.round((typeof project.overallAverageGrade === 'number' ? project.overallAverageGrade : 0) * 2) / 2}
                               readOnly={true}
                               allowHalf={true}
                               size="sm"
@@ -366,8 +367,8 @@ const Dashboard = () => {
                       onClick={handlePrevPage}
                       disabled={pagination.currentPage === 1 || loading}
                       className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium ${pagination.currentPage === 1 || loading
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-500 hover:bg-gray-50'
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-500 hover:bg-gray-50'
                         }`}
                     >
                       <span className="sr-only">Previous</span>
@@ -382,8 +383,8 @@ const Dashboard = () => {
                       onClick={handleNextPage}
                       disabled={pagination.currentPage === pagination.totalPages || loading}
                       className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium ${pagination.currentPage === pagination.totalPages || loading
-                          ? 'text-gray-300 cursor-not-allowed'
-                          : 'text-gray-500 hover:bg-gray-50'
+                        ? 'text-gray-300 cursor-not-allowed'
+                        : 'text-gray-500 hover:bg-gray-50'
                         }`}
                     >
                       <span className="sr-only">Next</span>

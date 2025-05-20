@@ -5,29 +5,19 @@ import { getActivityDiagramsReviewData, submitReview, saveGeneralComment } from 
 // Define the criteria for activity diagrams
 const activityDiagramCriteria = [
   {
-    name: "Flow Logic",
-    key: "flowLogicScore",
-    description: "Correctly shows the flow of activities"
+    name: "UML Syntax",
+    key: "umlSyntaxScore",
+    description: "Activity diagrams have been created with correct UML syntax"
   },
   {
-    name: "Decision Points",
-    key: "decisionPointsScore",
-    description: "Properly represents decision points and conditions"
+    name: "Scenario Coverage",
+    key: "scenarioComprehensiveScore",
+    description: "The activity diagram for each use case contains all its Gherkin scenarios"
   },
   {
-    name: "Parallel Activities",
-    key: "parallelActivitiesScore",
-    description: "Correctly shows concurrent activities"
-  },
-  {
-    name: "Start/End Points",
-    key: "startEndPointsScore",
-    description: "Clear entry and exit points"
-  },
-  {
-    name: "Clarity",
-    key: "clarityScore",
-    description: "Easy to follow and understand"
+    name: "Gherkin Alignment",
+    key: "gherkinAlignmentScore",
+    description: "The steps of each Gherkin scenario match with the activities in the corresponding flow in the activity diagram"
   }
 ];
 

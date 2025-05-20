@@ -3,22 +3,21 @@ import { useParams } from 'react-router-dom';
 import { getProject, getProjectStats } from '../services/api';
 import Header from '../components/common/Header';
 import StarRating from '../components/common/StarRating';
-import { 
-  BookOpen, 
-  Hexagon, 
-  GitBranch, 
-  FileCode, 
-  Layers, 
-  Smartphone, 
+import {
+  BookOpen,
+  Hexagon,
+  GitBranch,
+  FileCode,
+  Layers,
+  Smartphone,
   ChevronRight,
-  Activity
 } from 'lucide-react';
 
 const ProjectDetails = () => {
   // We would normally get projectId from useParams, but here we'll simulate it
   // In a real app, you would replace this with useParams() from react-router-dom
   const { projectId } = useParams();
-  
+
   const [project, setProject] = useState(null);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -28,10 +27,9 @@ const ProjectDetails = () => {
     const fetchProjectDetails = async () => {
       try {
         setLoading(true);
-        
+
         // Get project stats first for more details
         const statsResponse = await getProjectStats(projectId);
-        console.log('Project stats:', statsResponse.data);
         // Determine if we need to fetch additional project info
         if (statsResponse.data && statsResponse.data.project) {
           setProject(statsResponse.data.project);
@@ -42,7 +40,7 @@ const ProjectDetails = () => {
           setProject(projectResponse.data.project || projectResponse.data);
           setStats(statsResponse.data.stats || {});
         }
-        
+
         setLoading(false);
       } catch (err) {
         console.error('Error fetching project details:', err);
@@ -105,7 +103,7 @@ const ProjectDetails = () => {
       default: return artifactType;
     }
   };
-  
+
   // Calculate review progress percentage
   const calculateProgress = (reviewed, total) => {
     if (!total) return 0;
@@ -117,14 +115,14 @@ const ProjectDetails = () => {
     const radius = (size - strokeWidth) / 2;
     const circumference = radius * 2 * Math.PI;
     const dash = (percentage * circumference) / 100;
-    
+
     return (
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="transform -rotate-90">
           {/* Background circle */}
           <circle
-            cx={size/2}
-            cy={size/2}
+            cx={size / 2}
+            cy={size / 2}
             r={radius}
             fill="none"
             stroke="#e5e7eb"
@@ -132,8 +130,8 @@ const ProjectDetails = () => {
           />
           {/* Progress circle */}
           <circle
-            cx={size/2}
-            cy={size/2}
+            cx={size / 2}
+            cy={size / 2}
             r={radius}
             fill="none"
             stroke={`var(--${color}-600)`}
@@ -141,15 +139,15 @@ const ProjectDetails = () => {
             strokeDasharray={circumference}
             strokeDashoffset={circumference - dash}
             strokeLinecap="round"
-            style={{ 
-              "--blue-600": "#2563eb", 
-              "--green-600": "#16a34a", 
-              "--violet-600": "#7c3aed", 
-              "--indigo-600": "#4f46e5", 
-              "--orange-600": "#ea580c", 
-              "--emerald-600": "#059669", 
-              "--yellow-600": "#ca8a04", 
-              "--pink-600": "#db2777", 
+            style={{
+              "--blue-600": "#2563eb",
+              "--green-600": "#16a34a",
+              "--violet-600": "#7c3aed",
+              "--indigo-600": "#4f46e5",
+              "--orange-600": "#ea580c",
+              "--emerald-600": "#059669",
+              "--yellow-600": "#ca8a04",
+              "--pink-600": "#db2777",
               "--gray-600": "#4b5563"
             }}
           />
@@ -166,12 +164,12 @@ const ProjectDetails = () => {
     const Icon = getArtifactIcon(artifactType);
     const color = getArtifactColor(artifactType);
     const displayName = getArtifactDisplayName(artifactType);
-    
+
     const total = stats?.[artifactType]?.total || 0;
     const reviewed = stats?.[artifactType]?.reviewed || 0;
     const rating = stats?.[artifactType]?.averageRating || 0;
     const progress = calculateProgress(reviewed, total);
-    
+
     return (
       <div className={`bg-white border border-${color}-100 rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow`}>
         <div className={`px-4 py-3 bg-${color}-50 border-b border-${color}-100 flex justify-between items-center`}>
@@ -182,7 +180,7 @@ const ProjectDetails = () => {
             <h3 className="font-medium text-gray-900">{displayName}</h3>
           </div>
         </div>
-        
+
         <div className="p-4">
           <div className="flex items-center justify-between mb-4">
             <ProgressCircle percentage={progress} color={color} />
@@ -190,8 +188,8 @@ const ProjectDetails = () => {
               <div className="text-2xl font-bold text-gray-900">{reviewed}/{total}</div>
               <div className="text-sm text-gray-500">Artifacts reviewed</div>
               <div className="mt-2 flex items-center">
-                <StarRating 
-                  value={typeof rating === 'number' ? rating : 0} 
+                <StarRating
+                  value={Math.round((typeof rating === 'number' ? rating : 0) * 2) / 2}
                   readOnly={true}
                   allowHalf={true}
                   size="sm"
@@ -202,8 +200,8 @@ const ProjectDetails = () => {
               </div>
             </div>
           </div>
-          
-          <a 
+
+          <a
             href={`/projects/${projectId}/${artifactType.replace(/([A-Z])/g, '-$1').toLowerCase()}`}
             className={`mt-4 w-full flex items-center justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-${color}-600 hover:bg-${color}-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-${color}-500`}
           >
@@ -232,8 +230,8 @@ const ProjectDetails = () => {
         <Header />
         <div className="text-center">
           <div className="text-red-500 mb-4">{error}</div>
-          <a 
-            href="/dashboard" 
+          <a
+            href="/dashboard"
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
           >
             Return to Dashboard
@@ -249,8 +247,8 @@ const ProjectDetails = () => {
         <Header />
         <div className="text-center">
           <div className="text-lg text-gray-700 mb-4">Project not found</div>
-          <a 
-            href="/dashboard" 
+          <a
+            href="/dashboard"
             className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
           >
             Return to Dashboard
@@ -260,21 +258,17 @@ const ProjectDetails = () => {
     );
   }
 
-  // Calculate overall stats
-  const totalArtifacts = stats ? Object.values(stats).reduce((sum, type) => sum + (type.total || 0), 0) : 0;
-  const totalReviewed = stats ? Object.values(stats).reduce((sum, type) => sum + (type.reviewed || 0), 0) : 0;
-  
   // Calculate average grade from all artifact types
   const artifactTypes = stats ? Object.keys(stats) : [];
   const ratingsSum = stats ? Object.values(stats).reduce((sum, type) => {
     const rating = typeof type.averageRating === 'number' && !isNaN(type.averageRating) ? type.averageRating : 0;
     return sum + rating;
   }, 0) : 0;
-  
-  const validRatingsCount = stats ? Object.values(stats).filter(type => 
+
+  const validRatingsCount = stats ? Object.values(stats).filter(type =>
     typeof type.averageRating === 'number' && !isNaN(type.averageRating) && type.averageRating > 0
   ).length : 0;
-  
+
   const averageGrade = validRatingsCount > 0 ? (ratingsSum / validRatingsCount) : 0;
 
   return (
@@ -287,12 +281,15 @@ const ProjectDetails = () => {
             <div>
               <h1 className="text-3xl font-bold text-gray-900">{project.name}</h1>
               <p className="mt-2 text-gray-600 max-w-3xl">{project.description || 'No description provided'}</p>
+              <div className="mt-2 text-sm text-gray-500">
+                Created: <span className="font-medium">{formatDate(project.createdAt)}</span>
+              </div>
             </div>
-            
+
             <div className="flex flex-col items-end">
               <div className="mb-2 flex items-center">
-                <StarRating 
-                  value={typeof averageGrade === 'number' ? averageGrade : 0} 
+                <StarRating
+                  value={Math.round((typeof averageGrade === 'number' ? averageGrade : 0) * 2) / 2}
                   readOnly={true}
                   allowHalf={true}
                   size="lg"
@@ -301,23 +298,20 @@ const ProjectDetails = () => {
                   {averageGrade ? averageGrade.toFixed(1) : '0.0'}
                 </span>
               </div>
-              <div className="text-sm text-gray-500">
-                Created: <span className="font-medium">{formatDate(project.createdAt)}</span>
-              </div>
             </div>
           </div>
         </div>
-        
-        {/* Artifact Cards */}
-        <div>          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {artifactTypes.map(type => (
-              <ArtifactCard key={type} artifactType={type} />
-            ))}
-          </div>
+
+      {/* Artifact Cards */}
+      <div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {artifactTypes.map(type => (
+            <ArtifactCard key={type} artifactType={type} />
+          ))}
         </div>
       </div>
     </div>
+    </div >
   );
 };
 

@@ -9,36 +9,30 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   getRequirementsReviewData,
   submitReview,
-  saveGeneralComment,
-  saveRubricEvaluation
+  saveGeneralComment
 } from '../services/api';
 
 // Define the criteria for requirements
 const requirementCriteria = [
   {
-    name: "Clarity",
-    key: "clarityScore",
-    description: "Requirements are clear and unambiguous"
+    name: "Proper Syntax",
+    key: "syntaxScore",
+    description: "Requirements are formulated using strict syntax (e.g., \"The system must...\")"
   },
   {
-    name: "Testability",
-    key: "testabilityScore",
-    description: "Requirements can be verified through testing"
+    name: "Correct Categorization",
+    key: "categorizationScore",
+    description: "Requirements are correctly categorized as functional or non-functional"
   },
   {
-    name: "Feasibility",
-    key: "feasibilityScore",
-    description: "Requirements are technically and operationally feasible"
+    name: "Well-defined Scope",
+    key: "scopeDefinitionScore",
+    description: "Each requirement describes either a single well-defined function/quality characteristic or a related group of functions"
   },
   {
-    name: "Necessity",
-    key: "necessityScore",
-    description: "Each requirement is essential to the system"
-  },
-  {
-    name: "Prioritization",
-    key: "prioritizationScore",
-    description: "Requirements are properly prioritized"
+    name: "Quantification",
+    key: "quantificationScore",
+    description: "Quality characteristics described by non-functional requirements are adequately quantified where possible"
   }
 ];
 
@@ -75,13 +69,57 @@ const RequirementsPage = () => {
   const { currentUser } = useAuth();
   const isAdmin = currentUser?.role === 'Admin';
 
+  // Helper function to get applicable criteria based on requirement type
+  const getApplicableCriteria = (requirementType) => {
+    // For NonFunctional requirements, show all criteria
+    if (requirementType === 'NonFunctional') {
+      return requirementCriteria;
+    }
+    
+    // For all other types (including Functional), show all criteria except Quantification
+    return requirementCriteria.filter(criterion => criterion.key !== 'quantificationScore');
+  };
+  
+  // Process aggregate rubric data to ensure quantification criterion is handled correctly
+  const processAggregateRubric = (rawAggregateData, requirements) => {
+    // If there's no data or no requirements, return default structure
+    if (!rawAggregateData || !requirements || requirements.length === 0) {
+      return {
+        criteriaAverages: {},
+        overallScore: 0,
+        reviewCount: 0
+      };
+    }
+    
+    // Count requirements by type
+    const reqTypes = requirements.reduce((acc, req) => {
+      const type = req.type || '';
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {});
+    
+    // Get number of NonFunctional requirements
+    const nonFunctionalCount = reqTypes['NonFunctional'] || 0;    
+    // Create a copy of the raw data
+    const processed = {...rawAggregateData};
+    
+    // If there are no NonFunctional requirements but quantification score exists
+    // This would indicate the server incorrectly calculated with quantification for all
+    if (nonFunctionalCount === 0 && processed.criteriaAverages?.quantificationScore) {
+      console.warn('Server included quantificationScore but no NonFunctional requirements exist');
+      delete processed.criteriaAverages.quantificationScore;
+    }
+    
+    // No longer recalculating the overall score - using the server's calculation
+    
+    return processed;
+  };
+
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         const response = await getRequirementsReviewData(projectId);
-        console.log('API Response:', response.data);
-
         if (response.data.projectName) {
           setProjectName(response.data.projectName);
         }
@@ -92,7 +130,9 @@ const RequirementsPage = () => {
         setGeneralComment(generalComment || '');
         setOriginalGeneralComment(generalComment || '');
 
-        setAggregateRubric(aggregateRubric || {
+        // Process the aggregate rubric data to ensure proper handling of conditional criteria
+        const processedAggregateRubric = processAggregateRubric(aggregateRubric, artifacts);
+        setAggregateRubric(processedAggregateRubric || {
           criteriaAverages: {},
           overallScore: 0,
           reviewCount: 0
@@ -114,29 +154,25 @@ const RequirementsPage = () => {
   }, [generalComment, originalGeneralComment]);
 
   const openReviewModal = (requirement) => {
-    console.log('Opening review modal for requirement:', requirement);
     setSelectedRequirement(requirement);
 
-    // Initialize current review state
+    // Initialize current review state with the correct keys
+    const applicableCriteria = getApplicableCriteria(requirement.type);
+    const initialScores = {};
+    
+    // Initialize scores for applicable criteria
+    applicableCriteria.forEach(criterion => {
+      initialScores[criterion.key] = requirement.scores?.[criterion.key] || 0;
+    });
+
     const reviewData = {
       comment: requirement.comment || '',
-      scores: requirement.scores || {
-        clarityScore: 0,
-        testabilityScore: 0,
-        feasibilityScore: 0,
-        necessityScore: 0,
-        prioritizationScore: 0
-      }
+      scores: requirement.scores || initialScores
     };
 
     setCurrentReview(reviewData);
     setReviewDirty(false);
     setShowModal(true);
-  };
-
-  // Handler for dirty state changes from the modal
-  const handleReviewDirtyChange = (isDirty) => {
-    setReviewDirty(isDirty);
   };
 
   // Update handleCloseReviewModal to only show unsaved changes for admins
@@ -176,17 +212,26 @@ const RequirementsPage = () => {
 
   // Calculate overall rating from category scores
   const calculateReviewOverallScore = useCallback(() => {
-    const scores = Object.values(currentReview.scores || {});
-    if (scores.length === 0) return 0;
-    const sum = scores.reduce((total, score) => total + (score || 0), 0);
-    return sum / scores.length;
-  }, [currentReview.scores]);
+    if (!selectedRequirement) return 0;
+    
+    // Get only the applicable criteria based on requirement type
+    const applicableCriteria = getApplicableCriteria(selectedRequirement.type);
+    
+    // Only calculate based on the applicable criteria
+    const relevantScores = applicableCriteria.map(criterion =>
+      Number(currentReview.scores?.[criterion.key] || 0)
+    );
+
+    if (relevantScores.length === 0) return 0;
+
+    const sum = relevantScores.reduce((total, score) => total + score, 0);
+    return sum / relevantScores.length;
+  }, [currentReview.scores, selectedRequirement]);
 
   // Update saveReview function with permission check
   const saveReview = async () => {
     // Only allow admin users to save reviews
     if (!isAdmin) {
-      console.log('[RequirementsPage] Non-admin user attempted to save a review');
       return;
     }
 
@@ -200,16 +245,13 @@ const RequirementsPage = () => {
       const overallRating = calculateReviewOverallScore();
 
       try {
-        const response = await submitReview(
+        await submitReview(
           'requirement',
           selectedRequirement._id,
           overallRating,
           currentReview.comment,
           currentReview.scores
         );
-
-        console.log('API response:', response.data);
-
         // Create a completely new object for the updated requirement
         const updatedRequirement = {
           ...selectedRequirement,
@@ -233,7 +275,11 @@ const RequirementsPage = () => {
         // Refresh aggregate data
         const refreshResponse = await getRequirementsReviewData(projectId);
         if (refreshResponse.data.aggregateRubric) {
-          setAggregateRubric(refreshResponse.data.aggregateRubric);
+          const processedAggregateRubric = processAggregateRubric(
+            refreshResponse.data.aggregateRubric,
+            refreshResponse.data.artifacts || requirements
+          );
+          setAggregateRubric(processedAggregateRubric);
         }
 
         // Show success toast notification
@@ -252,7 +298,6 @@ const RequirementsPage = () => {
   const saveGeneralCommentHandler = async () => {
     // Only allow admin users to save general comments
     if (!isAdmin) {
-      console.log('[RequirementsPage] Non-admin user attempted to save a general comment');
       return;
     }
 
@@ -358,7 +403,7 @@ const RequirementsPage = () => {
                       <span className="px-2 py-1 bg-gray-100 rounded text-xs">{req.system_priority || 'N/A'}</span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {req.reviewed ? <StarRating value={req.rating} allowHalf={true} readOnly={true} /> : '-'}
+                      {req.reviewed ? <StarRating value={Math.round(req.rating * 2) / 2} allowHalf={true} readOnly={true} /> : '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${req.reviewed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
@@ -475,7 +520,7 @@ const RequirementsPage = () => {
                 <h4 className="font-medium mb-3">Overall Rating (Auto-calculated)</h4>
                 <div className="flex items-center">
                   <StarRating
-                    value={calculateReviewOverallScore()}
+                    value={Math.round(calculateReviewOverallScore() * 2) / 2}
                     size="lg"
                     allowHalf={true}
                     readOnly={true}
@@ -484,16 +529,16 @@ const RequirementsPage = () => {
                 </div>
               </div>
 
-              {/* Criteria-specific ratings */}
+              {/* Criteria-specific ratings - Only show applicable criteria */}
               <div className="mb-6">
                 <h4 className="font-medium mb-3">Evaluation Criteria</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {requirementCriteria.map(criteria => (
+                  {getApplicableCriteria(selectedRequirement.type).map(criteria => (
                     <div key={criteria.key} className="p-3 bg-gray-50 rounded">
                       <div className="flex justify-between items-center mb-1">
                         <span className="font-medium">{criteria.name}</span>
                         <StarRating
-                          value={currentReview.scores?.[criteria.key] || 0}
+                          value={Math.round((currentReview.scores?.[criteria.key] || 0) * 2) / 2}
                           onChange={isAdmin ? value => handleScoreChange(criteria.key, value) : undefined}
                           allowHalf={true}
                           readOnly={!isAdmin}

@@ -71,14 +71,12 @@ const ReviewPage = ({
     // Function to refresh aggregate rubric data
     const refreshAggregateRubricData = async () => {
         try {
-            console.log('[ReviewPage] Refreshing aggregate rubric data');
 
             // Directly re-fetch the review data to get updated aggregate information
             const response = await fetchReviewData(projectId);
 
             // Only update the aggregate rubric portion of state
             if (response.data.aggregateRubric) {
-                console.log('[ReviewPage] Updated aggregate rubric from API:', response.data.aggregateRubric);
                 setAggregateRubric(response.data.aggregateRubric);
             }
         } catch (err) {
@@ -90,10 +88,8 @@ const ReviewPage = ({
         const fetchData = async () => {
             try {
                 setLoading(true);
-                console.log(`[ReviewPage] Fetching data for ${artifactType} in project ${projectId}`);
 
                 const response = await fetchReviewData(projectId);
-                console.log('[ReviewPage] API Response:', response.data);
 
                 // Extract project name if available in response
                 if (response.data.projectName) {
@@ -101,17 +97,12 @@ const ReviewPage = ({
                 }
 
                 // Log what we're extracting from the response
-                console.log('[ReviewPage] Artifacts from response:', response.data.artifacts ||
-                    response.data.diagrams || 'none');
-                console.log('[ReviewPage] General comment:', response.data.generalComment);
-                console.log('[ReviewPage] Aggregate rubric:', response.data.aggregateRubric);
-
+                
                 // The response structure may vary depending on the artifact type
                 const { artifacts: fetchedArtifacts, diagrams, generalComment, aggregateRubric } = response.data;
 
                 // Handle both "artifacts" and "diagrams" field names
                 const artifactsToUse = fetchedArtifacts || diagrams || [];
-                console.log('[ReviewPage] Using artifacts:', artifactsToUse);
 
                 setArtifacts(artifactsToUse);
                 setGeneralComment(generalComment || '');
@@ -139,16 +130,8 @@ const ReviewPage = ({
         setCommentDirty(generalComment !== originalGeneralComment);
     }, [generalComment, originalGeneralComment]);
 
-    // Add this useEffect to monitor artifacts state changes
-    useEffect(() => {
-        if (artifacts.length > 0) {
-            console.log('[ReviewPage] Artifacts state changed. New count:', artifacts.length);
-            console.log('[ReviewPage] First artifact reviewed status:', artifacts[0]?.reviewed);
-        }
-    }, [artifacts]);
 
     const openReviewModal = (artifact) => {
-        console.log('[ReviewPage] Opening review modal for artifact:', artifact);
         setSelectedArtifact(artifact);
 
         // Deep clone the scores to avoid reference issues
@@ -160,7 +143,6 @@ const ReviewPage = ({
             scores: deepClonedScores
         };
 
-        console.log('[ReviewPage] Setting current review to:', reviewData);
         setCurrentReview(reviewData);
 
         // Store original values for dirty check
@@ -169,24 +151,19 @@ const ReviewPage = ({
             scores: deepClonedScores
         };
 
-        console.log('[ReviewPage] Original review set to:', originalReviewRef.current);
         setReviewDirty(false);
         setShowModal(true);
     };
 
     // Handler for dirty state changes from the modal
     const handleReviewDirtyChange = (isDirty) => {
-        console.log('[ReviewPage] Review dirty state changed:', isDirty);
         setReviewDirty(isDirty);
     };
 
     const handleCloseReviewModal = () => {
-        console.log('[ReviewPage] Close modal requested, dirty state:', reviewDirty);
         if (reviewDirty && isAdmin) {
-            console.log('[ReviewPage] Showing unsaved changes modal');
             setShowUnsavedChangesModal(true);
         } else {
-            console.log('[ReviewPage] No changes or not admin, closing modal directly');
             setShowModal(false);
             setSelectedArtifact(null);
             setCurrentReview({ comment: '', scores: {} });
@@ -194,14 +171,11 @@ const ReviewPage = ({
     };
 
     const handleUnsavedChangesModalAction = (action) => {
-        console.log('[ReviewPage] Unsaved changes action:', action);
         setShowUnsavedChangesModal(false);
 
         if (action === 'save') {
-            console.log('[ReviewPage] Saving changes before closing');
             saveReview();
         } else if (action === 'discard') {
-            console.log('[ReviewPage] Discarding changes and closing');
             setShowModal(false);
             setSelectedArtifact(null);
             setCurrentReview({ comment: '', scores: {} });
@@ -240,13 +214,10 @@ const ReviewPage = ({
     const saveReview = async () => {
         // Only allow admin users to save reviews
         if (!isAdmin) {
-            console.log('[ReviewPage] Non-admin user attempted to save a review');
             return;
         }
         
         try {
-            console.log('[ReviewPage] Starting save review process');
-            console.log('[ReviewPage] Current review state:', currentReview);
 
             if (!selectedArtifact) {
                 console.error('[ReviewPage] No artifact selected!');
@@ -255,30 +226,18 @@ const ReviewPage = ({
 
             // Calculate overall rating from category scores
             const overallRating = calculateReviewOverallScore();
-            console.log('[ReviewPage] Calculated overall rating:', overallRating);
 
             // Create a new scores object for the API call
             const scoresForApi = { ...currentReview.scores };
-            console.log('[ReviewPage] Scores being sent to API:', scoresForApi);
 
             try {
-                console.log('[ReviewPage] Calling submitReviewFn with:', {
-                    artifactType: artifactType.slice(0, -1),
-                    artifactId: selectedArtifact._id,
-                    rating: overallRating,
-                    comment: currentReview.comment,
-                    scores: scoresForApi
-                });
-
-                const response = await submitReviewFn(
+                await submitReviewFn(
                     artifactType.slice(0, -1),
                     selectedArtifact._id,
                     overallRating,
                     currentReview.comment,
                     scoresForApi
                 );
-
-                console.log('[ReviewPage] API response:', response.data);
 
                 // Create a completely new object for the updated artifact
                 const updatedArtifact = {
@@ -293,10 +252,6 @@ const ReviewPage = ({
                 const updatedArtifacts = artifacts.map(artifact =>
                     artifact._id === selectedArtifact._id ? updatedArtifact : artifact
                 );
-
-                console.log('[ReviewPage] Updated artifact:', updatedArtifact);
-                console.log('[ReviewPage] Updating artifacts array with new review data');
-
                 // Update state in sequence
                 setArtifacts(updatedArtifacts);
                 setReviewDirty(false);
@@ -321,7 +276,6 @@ const ReviewPage = ({
     const saveGeneralCommentHandler = async () => {
         // Only allow admin users to save general comments
         if (!isAdmin) {
-            console.log('[ReviewPage] Non-admin user attempted to save a general comment');
             return;
         }
         
@@ -344,7 +298,6 @@ const ReviewPage = ({
 
     // Handler for review changes from the modal
     const handleReviewChange = (newData) => {
-        console.log('[ReviewPage] Review data changed in modal:', newData);
         setCurrentReview(prev => ({
             ...prev,
             ...newData
