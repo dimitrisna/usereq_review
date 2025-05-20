@@ -1,6 +1,6 @@
-# Usereq-Review-App
+# Usereq Review UI
 
-A web application for reviewing software engineering artifacts, including requirements, user stories, UML diagrams, and mockups.
+The UI of Usereq Review application for reviewing software engineering artifacts, including requirements, user stories, UML diagrams, and mockups.
 
 
 ## Setup
