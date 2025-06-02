@@ -1,6 +1,6 @@
 // src/contexts/AuthContext.js
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { getCurrentUser, login, logout } from '../services/api';
+import { getCurrentUser } from '../services/api';
 
 const AuthContext = createContext();
 
@@ -13,13 +13,15 @@ export const AuthProvider = ({ children }) => {
     const fetchUser = async () => {
       try {
         const token = localStorage.getItem('token');
+        
         if (token) {
           const response = await getCurrentUser();
-          setCurrentUser(response.data.user || response.data);
+          const userData = response.data.user || response.data;
+          setCurrentUser(userData);
         }
       } catch (err) {
-        console.error('Failed to fetch user:', err);
         localStorage.removeItem('token');
+        setCurrentUser(null);
       } finally {
         setLoading(false);
       }
@@ -28,47 +30,31 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, []);
   
-  const handleLogin = async (email, password) => {
-    try {
-      setError(null);
-      const response = await login(email, password);
-      
-      // Check if the API returns token in the expected format
-      const token = response.data.token;
-      const user = response.data.user;
-      
-      if (token && user) {
-        localStorage.setItem('token', token);
-        setCurrentUser(user);
-        return true;
-      } else {
-        throw new Error('Invalid response format from login API');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
-      return false;
-    }
+  const handleAuth0Success = (token, user) => {
+    localStorage.setItem('token', token);
+    setCurrentUser(user);
+    setError(null);
+    setLoading(false);
   };
   
-  const handleLogout = async () => {
-    try {
-      await logout();
-    } catch (err) {
-      console.error('Logout error:', err);
-    } finally {
-      // Always clear token and user state, even if API call fails
-      localStorage.removeItem('token');
-      setCurrentUser(null);
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.clear();
+    setCurrentUser(null);
+    setError(null);
+    
+    setTimeout(() => {
+      const logoutUrl = `${process.env.REACT_APP_API_URL}/api/oauth/logout?returnTo=${encodeURIComponent(window.location.origin)}`;
+      window.location.href = logoutUrl;
+    }, 100);
   };
   
   const value = {
     currentUser,
-    login: handleLogin,
-    logout: handleLogout,
+    loading,
     error,
-    loading
+    logout: handleLogout,
+    handleAuth0Success
   };
   
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

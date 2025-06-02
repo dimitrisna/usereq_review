@@ -1,17 +1,15 @@
 // src/components/common/Header.js
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { ClipboardCheck, ChevronDown, LogOut } from 'lucide-react';
 
 const Header = ({ username }) => {
   const { logout, currentUser } = useAuth();
-  const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
+  const handleLogout = () => {
+    logout();
   };
 
   const displayName = username || currentUser?.username || currentUser?.email || 'User';
@@ -22,7 +20,7 @@ const Header = ({ username }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and App Name */}
-          <Link to="/dashboard" className="flex items-center space-x-2 text-white hover:text-indigo-100 transition-colors">
+          <Link to="/" className="flex items-center space-x-2 text-white hover:text-indigo-100 transition-colors">
             <div className="h-8 w-8 bg-white bg-opacity-20 backdrop-blur-sm rounded-lg flex items-center justify-center">
               <ClipboardCheck size={20} className="text-white" />
             </div>

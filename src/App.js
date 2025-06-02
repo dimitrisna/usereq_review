@@ -14,14 +14,16 @@ import SequenceDiagramsPage from './pages/SequenceDiagramsPage';
 import UseCaseDiagramsPage from './pages/UseCaseDiagramPage';
 import DesignPatternsPage from './pages/DesignPatternsPage';
 import MockupsPage from './pages/MockupsPage';
-import LoginPage from './pages/LoginPage';
-import RegisterPage from './pages/RegisterPage';
+import AuthScreen from './pages/AuthScreen';
 
-// ProtectedRoute component
-const ProtectedRoute = () => {
-  const { currentUser, loading } = useAuth();
-  
-  if (loading) return (
+// Component that redirects to Auth0 if not authenticated
+const Auth0Redirect = () => {
+  React.useEffect(() => {
+    // Redirect directly to Auth0
+    window.location.href = `${process.env.REACT_APP_API_URL}/api/oauth/login?redirectTo=${encodeURIComponent(window.location.origin)}`;
+  }, []);
+
+  return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
       <div className="flex flex-col items-center space-y-4">
         <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-opacity-60"></div>
@@ -31,9 +33,27 @@ const ProtectedRoute = () => {
       </div>
     </div>
   );
+};
+
+// ProtectedRoute component
+const ProtectedRoute = () => {
+  const { currentUser, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-opacity-60"></div>
+          <div className="text-xl text-blue-700 font-medium">
+            Loading...<span className="animate-pulse">...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
   
   if (!currentUser) {
-    return <Navigate to="/login" />;
+    return <Auth0Redirect />;
   }
   
   return <Outlet />;
@@ -44,11 +64,10 @@ function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          {/* Public routes */}
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
+          {/* Auth callback route */}
+          <Route path="/auth" element={<AuthScreen />} />
           
-          {/* Protected routes */}
+          {/* All routes are protected - will redirect to Auth0 if not authenticated */}
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects/:projectId" element={<ProjectDetails />} />
